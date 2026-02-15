@@ -184,12 +184,8 @@ jobs:
 
       - name: Import GPG key
         run: |
-          echo "Importing GPG key inside container..."
-          # 1. Use --batch and loopback mode to prevent agent interaction errors
-          # 2. Provide the passphrase if the key is encrypted
-          printf "%s" "${GPG_KEY_DATA}" | gpg --batch --import --pinentry-mode loopback
-          # Ensure the trust is set correctly
-          printf "%s" "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
+          gpg --import --no-tty <<<"${{ secrets.GPG_KEY }}"
+          gpg --import-ownertrust --no-tty <<<"${{ vars.GPG_KEY_ID }}:5:"
 
       - name: Build builder image
         run: |
@@ -235,24 +231,20 @@ jobs:
           # Run a one-shot Arch-based container that has repo-add and GPG available.
           # We mount only repo/x86_64 and pass the key material into the container.
           docker run --rm \
-            -e GPG_KEY_ID="${GPG_KEY_ID}" \
+            -e GPG_KEY_ID="${{ vars.GPG_KEY_ID }}" \
             -e GPG_KEY_DATA="${{ secrets.GPG_KEY }}" \
             -v "$PWD":/repo/x86_64 \
             archlinux:base \
             bash -lc '
               set -e
-              pacman -Sy --noconfirm pacman-contrib gnupg
 
-              mkdir -p /root/.gnupg
-              chmod 700 /root/.gnupg
-              if [ -n "${GPG_KEY_DATA-}" ]; then
-                echo "Importing GPG key inside container..."
-                # 1. Use --batch and loopback mode to prevent agent interaction errors
-                # 2. Provide the passphrase if the key is encrypted
-                printf "%s" "${GPG_KEY_DATA}" | gpg --batch --import --pinentry-mode loopback
-                # Ensure the trust is set correctly
-                printf "%s" "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
-              fi
+              pacman -Sy --noconfirm pacman-contrib gnupg
+              mkdir -p ~/.gnupg
+              chmod 700 ~/.gnupg
+              echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+              gpgconf --kill gpg-agent
+              gpg --batch --import --pinentry-mode loopback --no-tty <<<"${GPG_KEY_DATA}"
+              echo "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
 
               cd /repo/x86_64
 
