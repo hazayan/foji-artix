@@ -184,13 +184,12 @@ jobs:
 
       - name: Import GPG key
         run: |
-          gpg --import --no-tty <<<"${{ secrets.GPG_KEY }}"
-          gpg --import-ownertrust --no-tty <<<"${{ vars.GPG_KEY_ID }}:5:"
-
-      - name: Import GPG key
-        run: |
-          gpg --import --no-tty <<<"${{ secrets.GPG_KEY }}"
-          gpg --import-ownertrust --no-tty <<<"${{ vars.GPG_KEY_ID }}:5:"
+          echo "Importing GPG key inside container..."
+          # 1. Use --batch and loopback mode to prevent agent interaction errors
+          # 2. Provide the passphrase if the key is encrypted
+          echo "${GPG_KEY_DATA}" | gpg --batch --import --pinentry-mode loopback
+          # Ensure the trust is set correctly
+          echo "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
 
       - name: Build builder image
         run: |
@@ -246,11 +245,13 @@ jobs:
 
               mkdir -p /root/.gnupg
               chmod 700 /root/.gnupg
-
               if [ -n "${GPG_KEY_DATA-}" ]; then
                 echo "Importing GPG key inside container..."
-                gpg --import --no-tty <<<"${GPG_KEY_DATA}"
-                gpg --import-ownertrust --no-tty <<<"${GPG_KEY_ID}:5:"
+                # 1. Use --batch and loopback mode to prevent agent interaction errors
+                # 2. Provide the passphrase if the key is encrypted
+                echo "${GPG_KEY_DATA}" | gpg --batch --import --pinentry-mode loopback
+                # Ensure the trust is set correctly
+                echo "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
               fi
 
               cd /repo/x86_64
