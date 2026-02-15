@@ -187,9 +187,9 @@ jobs:
           echo "Importing GPG key inside container..."
           # 1. Use --batch and loopback mode to prevent agent interaction errors
           # 2. Provide the passphrase if the key is encrypted
-          echo "${GPG_KEY_DATA}" | gpg --batch --import --pinentry-mode loopback
+          printf "%s" "${GPG_KEY_DATA}" | gpg --batch --import --pinentry-mode loopback
           # Ensure the trust is set correctly
-          echo "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
+          printf "%s" "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
 
       - name: Build builder image
         run: |
@@ -249,9 +249,9 @@ jobs:
                 echo "Importing GPG key inside container..."
                 # 1. Use --batch and loopback mode to prevent agent interaction errors
                 # 2. Provide the passphrase if the key is encrypted
-                echo "${GPG_KEY_DATA}" | gpg --batch --import --pinentry-mode loopback
+                printf "%s" "${GPG_KEY_DATA}" | gpg --batch --import --pinentry-mode loopback
                 # Ensure the trust is set correctly
-                echo "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
+                printf "%s" "${GPG_KEY_ID}:5:" | gpg --batch --import-ownertrust
               fi
 
               cd /repo/x86_64
