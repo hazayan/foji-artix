@@ -1,18 +1,12 @@
-[submodule "valent"]
-	path = packages/valent
-	url = git@github.com:ylabidi/aur-valent.git
-[submodule "meli"]
-	path = packages/meli
-	url = git@github.com:hazayan/pkg-meli.git
-[submodule "paru"]
-	path = packages/paru
-	url = git@github.com:hazayan/pkg-paru.git
-[submodule "ly"]
-	path = packages/ly
-	url = git@github.com:hazayan/pkg-ly.git
-[submodule "niri"]
-	path = packages/niri
-	url = git@github.com:hazayan/pkg-niri.git
 [submodule "aura"]
 	path = packages/aura
-	url = git@github.com:hazayan/pkg-aura.git
+	url = git@github.com:poqai/aura.git
+[submodule "paru"]
+	path = packages/paru
+	url = git@github.com:poqai/paru.git
+[submodule "meli"]
+	path = packages/meli
+	url = git@github.com:poqai/meli.git
+[submodule "mgmt"]
+	path = packages/mgmt
+	url = git@github.com:poqai/mgmt.git
