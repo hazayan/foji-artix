@@ -51,13 +51,13 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: Build syspac tool
+      - name: Build foji tool
         run: cargo build --release
 
       - name: Get all packages
         id: packages
         run: |
-          ALL_PACKAGES=$(./target/release/syspac detect-changes --all)
+          ALL_PACKAGES=$(./target/release/foji detect-changes --all)
           echo "packages=${ALL_PACKAGES}" >> $GITHUB_OUTPUT
           echo "Will rebuild all packages: ${ALL_PACKAGES}"
 

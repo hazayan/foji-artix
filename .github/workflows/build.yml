@@ -11,13 +11,13 @@ on:
 
 env:
   RELEASE_TAG: repo
-  REPO_NAME: syspac
+  REPO_NAME: foji
 
 jobs:
   preflight:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/syspac:latest
+      image: ghcr.io/${{ github.repository_owner }}/foji:latest
     steps:
       - name: Checkout code with submodules
         uses: actions/checkout@v3
@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Debug syspac image environment
+      - name: Debug foji image environment
         shell: bash
         run: |
           echo "User: $(whoami)"
@@ -33,13 +33,13 @@ jobs:
           echo "Workspace: ${GITHUB_WORKSPACE}"
           echo "Listing /usr/local/bin:"
           ls -l /usr/local/bin || echo "/usr/local/bin not found"
-          echo "Where is syspac?"
-          command -v syspac || echo "syspac not in PATH"
+          echo "Where is foji?"
+          command -v foji || echo "foji not in PATH"
 
       - name: Fix repository ownership for container user
         shell: bash
         run: |
-          # syspac (via libgit2) requires the repo to be owned by the current user.
+          # foji (via libgit2) requires the repo to be owned by the current user.
           # The container user should already own the workspace; if not, adjust directly.
           chown -R "$(id -u):$(id -g)" "${GITHUB_WORKSPACE}" || true
 
@@ -50,10 +50,10 @@ jobs:
           # Check if this is a rebuild-all command
           if [[ "${{ github.event_name }}" == "repository_dispatch" ]] && [[ "${{ github.event.action }}" == "rebuild-all" ]]; then
             echo "🔨 Rebuild all packages requested"
-            CHANGED=$(syspac detect-changes --all --paths)
+            CHANGED=$(foji detect-changes --all --paths)
           else
             echo "🔍 Detecting changed packages"
-            CHANGED=$(syspac detect-changes --paths)
+            CHANGED=$(foji detect-changes --paths)
           fi
 
           echo "Changed packages to build: $CHANGED"
@@ -61,20 +61,20 @@ jobs:
 
           # Also get JSON output for debugging
           echo "JSON output:"
-          syspac detect-changes --paths --format json
+          foji detect-changes --paths --format json
 
       - name: List all packages (debug)
         shell: bash
         run: |
           echo "All packages in repository:"
-          syspac list-packages --verbose
+          foji list-packages --verbose
 
       - name: List current packages (source of truth)
         id: current_pkgs
         shell: bash
         run: |
           # Get packages as newline-separated list and join into a single space-separated string
-          mapfile -t pkgs < <(syspac list-packages)
+          mapfile -t pkgs < <(foji list-packages)
           CURRENT="${pkgs[*]}"
           echo "Current packages: ${CURRENT}"
           echo "current=${CURRENT}" >> "$GITHUB_OUTPUT"
@@ -121,8 +121,8 @@ jobs:
             # Download all existing assets to preserve them
             cd repo/x86_64
             gh release download ${{ env.RELEASE_TAG }} --pattern "*.pkg.tar.zst*" || echo "No packages to download"
-            gh release download ${{ env.RELEASE_TAG }} --pattern "syspac.db*" || echo "No database to download"
-            gh release download ${{ env.RELEASE_TAG }} --pattern "syspac.files*" || echo "No files database to download"
+            gh release download ${{ env.RELEASE_TAG }} --pattern "foji.db*" || echo "No database to download"
+            gh release download ${{ env.RELEASE_TAG }} --pattern "foji.files*" || echo "No files database to download"
             cd ../..
 
             echo "Downloaded existing assets:"
@@ -145,7 +145,7 @@ jobs:
 
           CURRENT="${{ steps.current_pkgs.outputs.current }}"
 
-          echo "Current package set from syspac:"
+          echo "Current package set from foji:"
           echo "${CURRENT}"
 
           # If there are no package files yet, nothing to prune
@@ -249,7 +249,7 @@ jobs:
               cd /repo/x86_64
 
               # Remove existing DB files
-              rm -f syspac.db* syspac.files* syspac.db.tar.gz.lck || true
+              rm -f foji.db* foji.files* foji.db.tar.gz.lck || true
 
               shopt -s nullglob
               # Collect all package archives (exclude signatures)
@@ -284,12 +284,12 @@ jobs:
 
               echo "Creating database (signed if key is available) in container..."
               if [ -n "${GPG_KEY_ID-}" ]; then
-                repo-add -s -k "${GPG_KEY_ID}" -n -R syspac.db.tar.gz "${PKGONLY[@]}" || {
+                repo-add -s -k "${GPG_KEY_ID}" -n -R foji.db.tar.gz "${PKGONLY[@]}" || {
                   echo "repo-add with signing failed; attempting unsigned..."
-                  repo-add -n -R syspac.db.tar.gz "${PKGONLY[@]}"
+                  repo-add -n -R foji.db.tar.gz "${PKGONLY[@]}"
                 }
               else
-                repo-add -n -R syspac.db.tar.gz "${PKGONLY[@]}"
+                repo-add -n -R foji.db.tar.gz "${PKGONLY[@]}"
               fi
             '
 
@@ -305,7 +305,7 @@ jobs:
           Add this repository to your `/etc/pacman.conf`:
 
           ```ini
-          [syspac]
+          [foji]
           SigLevel = Optional TrustAll
           Server = https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE_TAG }}
           ```
@@ -338,7 +338,7 @@ jobs:
           shopt -s nullglob
 
           PKGFILES=( repo/x86_64/*.pkg.tar.* )
-          DBFILES=( repo/x86_64/syspac.db* repo/x86_64/syspac.files* )
+          DBFILES=( repo/x86_64/foji.db* repo/x86_64/foji.files* )
 
           HAS_PKGS=false
           HAS_DB=false
@@ -371,7 +371,7 @@ jobs:
 
           if [ "$HAS_DB" = true ]; then
             # Only include DB/files patterns that actually match
-            for f in repo/x86_64/syspac.db* repo/x86_64/syspac.files*; do
+            for f in repo/x86_64/foji.db* repo/x86_64/foji.files*; do
               if [ -e "$f" ]; then
                 ARGS+=( "$f" )
               fi
