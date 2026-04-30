@@ -12,23 +12,23 @@ Get up and running with Syspac in 5 minutes.
 ## Step 1: Build the Tool (1 minute)
 
 ```bash
-cd /path/to/syspac
+cd /path/to/foji
 cargo build --release
 ```
 
-The binary will be at `target/release/syspac`.
+The binary will be at `target/release/foji`.
 
 ## Step 2: Test Locally (2 minutes)
 
 ```bash
 # List all packages
-./target/release/syspac list-packages --verbose
+./target/release/foji list-packages --verbose
 
 # Detect changes (will show all packages if this is first commit)
-./target/release/syspac detect-changes
+./target/release/foji detect-changes
 
 # Get version of a package
-./target/release/syspac package-version packages/niri
+./target/release/foji package-version packages/niri
 ```
 
 Expected output:
@@ -78,7 +78,7 @@ Replace the "Detect changed packages" step in your existing workflow:
     profile: minimal
     toolchain: stable
 
-- name: Build syspac tool
+- name: Build foji tool
   run: cargo build --release
 
 - name: Detect changed packages
@@ -86,9 +86,9 @@ Replace the "Detect changed packages" step in your existing workflow:
   run: |
     if [[ "${{ github.event_name }}" == "repository_dispatch" ]] && \
        [[ "${{ github.event.action }}" == "rebuild-all" ]]; then
-      CHANGED=$(./target/release/syspac detect-changes --all)
+      CHANGED=$(./target/release/foji detect-changes --all)
     else
-      CHANGED=$(./target/release/syspac detect-changes)
+      CHANGED=$(./target/release/foji detect-changes)
     fi
     echo "packages=${CHANGED}" >> $GITHUB_OUTPUT
 ```
@@ -105,8 +105,8 @@ Add this step BEFORE building packages:
     if gh release view repository >/dev/null 2>&1; then
       cd repo/x86_64
       gh release download repository --pattern "*.pkg.tar.zst*"
-      gh release download repository --pattern "syspac.db*"
-      gh release download repository --pattern "syspac.files*"
+      gh release download repository --pattern "foji.db*"
+      gh release download repository --pattern "foji.files*"
     fi
 ```
 
@@ -143,19 +143,19 @@ Go to GitHub Actions tab and verify:
 
 **Solution**: Run from repository root, or use `--repo-path`:
 ```bash
-syspac detect-changes --repo-path /path/to/repo
+foji detect-changes --repo-path /path/to/repo
 ```
 
-### "bash: syspac: command not found"
+### "bash: foji: command not found"
 
 **Problem**: Binary not in PATH
 
 **Solution**: Use full path or add to PATH:
 ```bash
-./target/release/syspac detect-changes
+./target/release/foji detect-changes
 # or
 export PATH="$PATH:$(pwd)/target/release"
-syspac detect-changes
+foji detect-changes
 ```
 
 ### "No packages found"
@@ -199,13 +199,13 @@ find . -name PKGBUILD
 
 #### JSON Output
 ```bash
-syspac detect-changes --format json | jq .
+foji detect-changes --format json | jq .
 ```
 
 #### Custom Scripts
 ```bash
 #!/bin/bash
-PACKAGES=$(syspac detect-changes)
+PACKAGES=$(foji detect-changes)
 for pkg in $PACKAGES; do
     echo "Building $pkg..."
     # Custom build logic
@@ -214,8 +214,8 @@ done
 
 #### Version Checking
 ```bash
-for pkg in $(syspac list-packages); do
-    version=$(syspac package-version "packages/$pkg")
+for pkg in $(foji list-packages); do
+    version=$(foji package-version "packages/$pkg")
     echo "$pkg: $version"
 done
 ```
@@ -236,7 +236,7 @@ Cache Rust dependencies in GitHub Actions:
 ### Debug Mode
 Set `RUST_LOG` for detailed logs:
 ```bash
-RUST_LOG=debug ./target/release/syspac detect-changes
+RUST_LOG=debug ./target/release/foji detect-changes
 ```
 
 ### Pre-commit Hook
@@ -256,7 +256,7 @@ done
 
 After completing this guide, you should have:
 
-- ✅ Built the syspac tool
+- ✅ Built the foji tool
 - ✅ Listed all packages in your repo
 - ✅ Updated GitHub workflow
 - ✅ Tested change detection

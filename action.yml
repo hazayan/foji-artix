@@ -1,5 +1,5 @@
 name: 'Setup Syspac'
-description: 'Downloads or builds the syspac package management tool'
+description: 'Downloads or builds the foji package management tool'
 author: 'hazayan'
 
 branding:
@@ -8,7 +8,7 @@ branding:
 
 inputs:
   version:
-    description: 'Version of syspac to use (default: latest release, or "build" to compile from source)'
+    description: 'Version of foji to use (default: latest release, or "build" to compile from source)'
     required: false
     default: 'latest'
 
@@ -18,18 +18,18 @@ inputs:
     default: ${{ github.token }}
 
 outputs:
-  syspac-path:
-    description: 'Path to the syspac binary'
-    value: ${{ steps.setup.outputs.syspac-path }}
+  foji-path:
+    description: 'Path to the foji binary'
+    value: ${{ steps.setup.outputs.foji-path }}
 
-  syspac-version:
-    description: 'Version of syspac that was installed'
+  foji-version:
+    description: 'Version of foji that was installed'
     value: ${{ steps.setup.outputs.version }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Setup syspac
+    - name: Setup foji
       id: setup
       shell: bash
       env:
@@ -39,11 +39,11 @@ runs:
 
         # If version is "build", compile from source
         if [[ "$VERSION" == "build" ]]; then
-          echo "🔨 Building syspac from source..."
+          echo "🔨 Building foji from source..."
 
-          # Check if we're in the syspac repo or need to clone
-          if [[ ! -f "Cargo.toml" ]] || ! grep -q "name = \"syspac\"" Cargo.toml 2>/dev/null; then
-            echo "Not in syspac repository, cannot build from source"
+          # Check if we're in the foji repo or need to clone
+          if [[ ! -f "Cargo.toml" ]] || ! grep -q "name = \"foji\"" Cargo.toml 2>/dev/null; then
+            echo "Not in foji repository, cannot build from source"
             exit 1
           fi
 
@@ -56,48 +56,48 @@ runs:
 
           # Build
           cargo build --release
-          SYSPAC_PATH="$(pwd)/target/release/syspac"
+          SYSPAC_PATH="$(pwd)/target/release/foji"
           VERSION="source"
         else
           # Determine version to download
           if [[ "$VERSION" == "latest" ]]; then
-            echo "🔍 Finding latest syspac release..."
+            echo "🔍 Finding latest foji release..."
             VERSION=$(gh release list --repo "${{ github.repository }}" --limit 1 | grep -v "repository" | head -1 | awk '{print $1}' || echo "")
 
             if [[ -z "$VERSION" ]]; then
-              echo "⚠️  No syspac release found, falling back to building from source"
+              echo "⚠️  No foji release found, falling back to building from source"
               VERSION="build"
             fi
           fi
 
           # Download if we have a version
           if [[ "$VERSION" != "build" ]]; then
-            echo "📦 Downloading syspac $VERSION..."
+            echo "📦 Downloading foji $VERSION..."
 
-            # Create directory for syspac
+            # Create directory for foji
             mkdir -p "$HOME/.local/bin"
 
             # Try to download the binary
             if gh release download "$VERSION" \
                 --repo "${{ github.repository }}" \
-                --pattern "syspac-*-linux-x86_64" \
-                --output "$HOME/.local/bin/syspac" 2>/dev/null; then
+                --pattern "foji-*-linux-x86_64" \
+                --output "$HOME/.local/bin/foji" 2>/dev/null; then
 
-              chmod +x "$HOME/.local/bin/syspac"
-              SYSPAC_PATH="$HOME/.local/bin/syspac"
-              echo "✅ Downloaded syspac $VERSION"
+              chmod +x "$HOME/.local/bin/foji"
+              SYSPAC_PATH="$HOME/.local/bin/foji"
+              echo "✅ Downloaded foji $VERSION"
             else
-              echo "⚠️  Failed to download syspac $VERSION, building from source instead"
+              echo "⚠️  Failed to download foji $VERSION, building from source instead"
               VERSION="build"
             fi
           fi
 
           # Fallback to building if download failed
           if [[ "$VERSION" == "build" ]]; then
-            echo "🔨 Building syspac from source as fallback..."
+            echo "🔨 Building foji from source as fallback..."
 
             if [[ ! -f "Cargo.toml" ]]; then
-              echo "ERROR: Not in syspac repository and cannot download binary"
+              echo "ERROR: Not in foji repository and cannot download binary"
               exit 1
             fi
 
@@ -107,30 +107,30 @@ runs:
             fi
 
             cargo build --release
-            SYSPAC_PATH="$(pwd)/target/release/syspac"
+            SYSPAC_PATH="$(pwd)/target/release/foji"
             VERSION="source"
           fi
         fi
 
-        # Verify syspac works
+        # Verify foji works
         if [[ -f "$SYSPAC_PATH" ]]; then
           echo "✅ Syspac ready at: $SYSPAC_PATH"
-          "$SYSPAC_PATH" --version || echo "syspac (version info not available)"
+          "$SYSPAC_PATH" --version || echo "foji (version info not available)"
 
           # Add to PATH
           echo "$(dirname "$SYSPAC_PATH")" >> $GITHUB_PATH
 
           # Set outputs
-          echo "syspac-path=$SYSPAC_PATH" >> $GITHUB_OUTPUT
+          echo "foji-path=$SYSPAC_PATH" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
         else
-          echo "❌ Failed to set up syspac"
+          echo "❌ Failed to set up foji"
           exit 1
         fi
 
-    - name: Cache syspac binary
+    - name: Cache foji binary
       if: inputs.version == 'latest'
       uses: actions/cache@v3
       with:
-        path: ~/.local/bin/syspac
-        key: syspac-${{ steps.setup.outputs.version }}-${{ runner.os }}
+        path: ~/.local/bin/foji
+        key: foji-${{ steps.setup.outputs.version }}-${{ runner.os }}

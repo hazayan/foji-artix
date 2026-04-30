@@ -43,8 +43,8 @@ This document summarizes the critical bugs that were fixed in the Rust rewrite.
       cd repo/x86_64
       # Download all existing packages
       gh release download repository --pattern "*.pkg.tar.zst*"
-      gh release download repository --pattern "syspac.db*"
-      gh release download repository --pattern "syspac.files*"
+      gh release download repository --pattern "foji.db*"
+      gh release download repository --pattern "foji.files*"
     fi
 ```
 
@@ -117,11 +117,11 @@ connman-resolvd-1.2.0-1.pkg.tar.zst  # Preserved
 **Added `--all` Flag:**
 ```bash
 # Get only changed packages
-$ syspac detect-changes
+$ foji detect-changes
 niri
 
 # Get ALL packages for rebuild
-$ syspac detect-changes --all
+$ foji detect-changes --all
 connman-resolvd ly niri valent
 ```
 
@@ -164,10 +164,10 @@ let changes = if all {
     if [[ "${{ github.event_name }}" == "repository_dispatch" ]] && \
        [[ "${{ github.event.action }}" == "rebuild-all" ]]; then
       # Full rebuild requested
-      CHANGED=$(./target/release/syspac detect-changes --all)
+      CHANGED=$(./target/release/foji detect-changes --all)
     else
       # Normal change detection
-      CHANGED=$(./target/release/syspac detect-changes)
+      CHANGED=$(./target/release/foji detect-changes)
     fi
 ```
 
@@ -219,11 +219,11 @@ Changed packages: connman-resolvd ly niri valent
 **Scenario 3: Manual Trigger**
 ```bash
 # On your machine
-$ ./target/release/syspac detect-changes --all
+$ ./target/release/foji detect-changes --all
 connman-resolvd ly niri valent
 
 # Use in custom scripts
-$ for pkg in $(syspac detect-changes --all); do
+$ for pkg in $(foji detect-changes --all); do
     echo "Building $pkg"
     # ... build logic ...
   done

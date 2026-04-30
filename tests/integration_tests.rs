@@ -69,7 +69,7 @@ fn test_list_packages_empty_repo() {
         .output()
         .unwrap();
 
-    // Build syspac (assumes it's built)
+    // Build foji (assumes it's built)
     let output = Command::new("cargo")
         .args(&[
             "run",

@@ -59,7 +59,7 @@ PR/Issue Comment (/rebuild-all)
          ↓
   [Detects event type]
          ↓
-  syspac detect-changes --all
+  foji detect-changes --all
          ↓
   [Builds all packages]
          ↓
@@ -76,12 +76,12 @@ PR/Issue Comment (/rebuild-all)
 
 2. **Build Workflow** (`.github/workflows/build-rust.yml`):
    - Listens for both `push` and `repository_dispatch` events
-   - When `repository_dispatch` type is `rebuild-all`, uses `syspac detect-changes --all`
+   - When `repository_dispatch` type is `rebuild-all`, uses `foji detect-changes --all`
    - Otherwise uses normal change detection
 
 3. **Syspac Tool**:
-   - `syspac detect-changes` - Returns only changed packages
-   - `syspac detect-changes --all` - Returns all packages in repository
+   - `foji detect-changes` - Returns only changed packages
+   - `foji detect-changes --all` - Returns all packages in repository
 
 ## Use Cases
 

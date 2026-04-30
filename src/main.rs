@@ -6,7 +6,7 @@ mod package;
 mod pkgbuild;
 
 #[derive(Parser)]
-#[command(name = "syspac")]
+#[command(name = "foji")]
 #[command(about = "Artix Linux package repository management tool", long_about = None)]
 struct Cli {
     #[command(subcommand)]

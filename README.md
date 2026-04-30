@@ -29,7 +29,7 @@ Syspac helps manage a GitHub-based Arch/Artix Linux package repository where pac
 cargo build --release
 ```
 
-The binary will be available at `target/release/syspac`.
+The binary will be available at `target/release/foji`.
 
 ## Usage
 
@@ -39,27 +39,27 @@ Detect packages that have changed between commits:
 
 ```bash
 # Compare against parent commit (HEAD^) - returns package names
-syspac detect-changes
+foji detect-changes
 # Output: niri valent
 
 # Return full paths (for Docker/scripts that need paths)
-syspac detect-changes --paths
+foji detect-changes --paths
 # Output: packages/niri packages/valent
 
 # Compare against a specific ref
-syspac detect-changes --base-ref main
+foji detect-changes --base-ref main
 
 # Get ALL packages (for full rebuild)
-syspac detect-changes --all
+foji detect-changes --all
 
 # Get all packages with paths
-syspac detect-changes --all --paths
+foji detect-changes --all --paths
 
 # Output as JSON
-syspac detect-changes --format json
+foji detect-changes --format json
 
 # Specify repository path
-syspac detect-changes --repo-path /path/to/repo
+foji detect-changes --repo-path /path/to/repo
 ```
 
 **Output formats:**
@@ -76,7 +76,7 @@ List all packages in the repository:
 
 ```bash
 # Simple list (names only)
-syspac list-packages
+foji list-packages
 # Output:
 # connman-resolvd
 # ly
@@ -84,7 +84,7 @@ syspac list-packages
 # valent
 
 # With full paths
-syspac list-packages --paths
+foji list-packages --paths
 # Output:
 # packages/connman-resolvd
 # packages/ly
@@ -92,7 +92,7 @@ syspac list-packages --paths
 # packages/valent
 
 # With version information
-syspac list-packages --verbose
+foji list-packages --verbose
 # Output:
 # connman-resolvd: 1.2.0-1
 # ly: 0.6.0-2
@@ -100,7 +100,7 @@ syspac list-packages --verbose
 # valent: 1.0.0-1
 
 # Specify repository path
-syspac list-packages --repo-path /path/to/repo
+foji list-packages --repo-path /path/to/repo
 ```
 
 ### Get Package Version
@@ -109,10 +109,10 @@ Extract version information from a PKGBUILD:
 
 ```bash
 # From a PKGBUILD file
-syspac package-version /path/to/PKGBUILD
+foji package-version /path/to/PKGBUILD
 
 # From a package directory (will look for PKGBUILD inside)
-syspac package-version packages/niri
+foji package-version packages/niri
 ```
 
 ## Architecture
@@ -146,7 +146,7 @@ src/
      - Will no longer appear in `list-packages`
      - Will **not** be reported by `detect-changes` as a “changed” package, because there is no current package to map the deleted paths to.
    - Workflows that need to handle removed packages must compare:
-     - The current package set: `syspac list-packages`
+     - The current package set: `foji list-packages`
      - Against the packages present in the binary repo / database
      and explicitly prune extra entries.
 
@@ -169,7 +169,7 @@ Replace the complex bash logic in your workflow with the Rust tool:
   run: |
     cargo build --release
     # Use --paths flag for Docker builds
-    CHANGED=$(./target/release/syspac detect-changes --paths)
+    CHANGED=$(./target/release/foji detect-changes --paths)
     echo "packages=${CHANGED}" >> $GITHUB_OUTPUT
     echo "Changed packages: ${CHANGED}"
 ```
@@ -183,9 +183,9 @@ The workflow automatically handles full rebuilds triggered by slash commands:
   id: changes
   run: |
     if [[ "${{ github.event_name }}" == "repository_dispatch" ]] && [[ "${{ github.event.action }}" == "rebuild-all" ]]; then
-      CHANGED=$(./target/release/syspac detect-changes --all --paths)
+      CHANGED=$(./target/release/foji detect-changes --all --paths)
     else
-      CHANGED=$(./target/release/syspac detect-changes --paths)
+      CHANGED=$(./target/release/foji detect-changes --paths)
     fi
     echo "packages=${CHANGED}" >> $GITHUB_OUTPUT
 ```
@@ -200,8 +200,8 @@ The workflow automatically handles full rebuilds triggered by slash commands:
     if gh release view repository >/dev/null 2>&1; then
       cd repo/x86_64
       gh release download repository --pattern "*.pkg.tar.zst*"
-      gh release download repository --pattern "syspac.db*"
-      gh release download repository --pattern "syspac.files*"
+      gh release download repository --pattern "foji.db*"
+      gh release download repository --pattern "foji.files*"
     fi
 ```
 
@@ -215,13 +215,13 @@ See `.github/workflows/build.yml` for the complete workflow.
 
 ### Handling Deleted Packages in Workflows
 
-Because `syspac detect-changes` only reports **existing** packages whose files changed, it will not directly tell you when a package has been removed from the repository. To avoid “dangling” packages that remain in the binary repo or database even after their source package is removed:
+Because `foji detect-changes` only reports **existing** packages whose files changed, it will not directly tell you when a package has been removed from the repository. To avoid “dangling” packages that remain in the binary repo or database even after their source package is removed:
 
 1. Use `list-packages` as the source of truth for current packages:
 
    ```bash
    # Get current package names (or paths)
-   CURRENT_PACKAGES=$(syspac list-packages)
+   CURRENT_PACKAGES=$(foji list-packages)
    ```
 
 2. When (re)generating the pacman repository:
@@ -239,15 +239,15 @@ Because `syspac detect-changes` only reports **existing** packages whose files c
    # by comparing CURRENT_PACKAGES to the set of *.pkg.tar.* files.
 
    # Rebuild the database from scratch based on the files present
-   rm -f syspac.db* syspac.files*
-   repo-add syspac.db.tar.gz ./*.pkg.tar.*
+   rm -f foji.db* foji.files*
+   repo-add foji.db.tar.gz ./*.pkg.tar.*
    ```
 
    Any package that has been removed from the source repository and whose package file you have deleted locally will then also be dropped from the database.
 
 3. If you need explicit detection of removed packages:
 
-   - Compare `syspac list-packages` output against the set of package names (or paths) derived from the existing repo or database.
+   - Compare `foji list-packages` output against the set of package names (or paths) derived from the existing repo or database.
    - Treat entries present in the repo/DB but missing from `list-packages` as removed, and delete their package files before rebuilding the DB.
 
 This combination ensures that:
@@ -307,10 +307,10 @@ mapfile -t ALL_PKGS < <(git submodule foreach --quiet '...')
 ### After (Rust)
 ```bash
 # Get package names
-syspac detect-changes
+foji detect-changes
 
 # Get package paths (for scripts)
-syspac detect-changes --paths
+foji detect-changes --paths
 ```
 
 **Benefits:**
@@ -354,14 +354,14 @@ See [MIGRATION.md](MIGRATION.md) for a complete migration guide.
 
 ```bash
 # Clone your repository
-git clone https://github.com/yourusername/syspac.git
-cd syspac
+git clone https://github.com/yourusername/foji.git
+cd foji
 
 # Build the tool
 cargo build --release
 
 # List all packages with versions
-./target/release/syspac list-packages --verbose
+./target/release/foji list-packages --verbose
 # Output:
 # connman-resolvd: 1.2.0-1
 # ly: 0.6.0-2
@@ -369,7 +369,7 @@ cargo build --release
 # valent: 1.0.0-1
 
 # List with paths
-./target/release/syspac list-packages --paths
+./target/release/foji list-packages --paths
 # Output:
 # packages/connman-resolvd
 # packages/ly
@@ -384,19 +384,19 @@ git commit -m "Update niri to 0.1.1"
 cd ../..
 
 # Detect what changed (names)
-./target/release/syspac detect-changes
+./target/release/foji detect-changes
 # Output: niri
 
 # Detect what changed (paths for Docker)
-./target/release/syspac detect-changes --paths
+./target/release/foji detect-changes --paths
 # Output: packages/niri
 
 # Get version of specific package
-./target/release/syspac package-version packages/niri
+./target/release/foji package-version packages/niri
 # Output: 0.1.1-1
 
 # Rebuild all packages (if needed)
-./target/release/syspac detect-changes --all --paths
+./target/release/foji detect-changes --all --paths
 # Output: packages/connman-resolvd packages/ly packages/niri packages/valent
 ```
 
@@ -404,12 +404,12 @@ cd ../..
 
 ### Tool doesn't detect changes
 
-**Problem**: `syspac detect-changes` returns empty
+**Problem**: `foji detect-changes` returns empty
 
 **Solution**: 
 - Check if you're on a branch with commits: `git log`
-- Try specifying base ref: `syspac detect-changes --base-ref main`
-- Verify packages exist: `syspac list-packages`
+- Try specifying base ref: `foji detect-changes --base-ref main`
+- Verify packages exist: `foji list-packages`
 
 ### PKGBUILD parsing fails
 
@@ -434,7 +434,7 @@ cd ../..
 **Problem**: "Package directory not found" in Docker logs
 
 **Solution**:
-- Use `--paths` flag: `syspac detect-changes --paths`
+- Use `--paths` flag: `foji detect-changes --paths`
 - This returns `packages/niri` instead of just `niri`
 - Docker script expects full paths relative to repo root
 
@@ -453,6 +453,6 @@ See LICENSE file for details.
 
 ## Support
 
-- [GitHub Issues](https://github.com/yourusername/syspac/issues)
+- [GitHub Issues](https://github.com/yourusername/foji/issues)
 - [Documentation](docs/)
 - [Architecture Guide](ARCHITECTURE.md)

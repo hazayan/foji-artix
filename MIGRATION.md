@@ -11,7 +11,7 @@ This guide explains how to migrate from the shell-based implementation to the ne
 - Difficult to test
 - Brittle error handling
 
-### After: Rust-Based (syspac tool)
+### After: Rust-Based (foji tool)
 - Single `cargo run` command
 - Type-safe operations
 - Testable components
@@ -29,13 +29,13 @@ First, ensure the tool works with your repository:
 cargo build --release
 
 # List all packages
-./target/release/syspac list-packages --verbose
+./target/release/foji list-packages --verbose
 
 # Test change detection (will show all packages if this is first commit)
-./target/release/syspac detect-changes
+./target/release/foji detect-changes
 
 # Test with a specific base ref
-./target/release/syspac detect-changes --base-ref HEAD~2
+./target/release/foji detect-changes --base-ref HEAD~2
 ```
 
 **Expected output:**
@@ -66,13 +66,13 @@ Replace the complex bash logic in `.github/workflows/build.yml`:
     profile: minimal
     toolchain: stable
 
-- name: Build syspac tool
+- name: Build foji tool
   run: cargo build --release
 
 - name: Detect changed packages
   id: changes
   run: |
-    CHANGED=$(./target/release/syspac detect-changes)
+    CHANGED=$(./target/release/foji detect-changes)
     echo "packages=${CHANGED}" >> $GITHUB_OUTPUT
     echo "Changed packages: ${CHANGED}"
 ```
@@ -93,9 +93,9 @@ You can also use the Rust tool inside your Docker build process:
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Copy and build syspac
-COPY . /syspac
-RUN cd /syspac && cargo build --release
+# Copy and build foji
+COPY . /foji
+RUN cd /foji && cargo build --release
 ```
 
 #### Use in entrypoint.sh:
@@ -107,8 +107,8 @@ if [ -n "${CHANGED_PACKAGES-}" ]; then
         # ... build logic ...
     done
 else
-    # Optionally use syspac to detect changes
-    CHANGED_PACKAGES=$(/syspac/target/release/syspac detect-changes)
+    # Optionally use foji to detect changes
+    CHANGED_PACKAGES=$(/foji/target/release/foji detect-changes)
     # ... continue ...
 fi
 ```
@@ -129,7 +129,7 @@ git commit -m "test: update niri"
 
 # Test locally
 cd ../..
-./target/release/syspac detect-changes
+./target/release/foji detect-changes
 # Should output: niri
 
 # Push and check GitHub Actions
@@ -178,7 +178,7 @@ mapfile -t ALL_PKGS < <(
 
 **After (Rust):**
 ```bash
-./target/release/syspac detect-changes
+./target/release/foji detect-changes
 ```
 
 ### Package Listing
@@ -196,7 +196,7 @@ done | sort -u
 
 **After (Rust):**
 ```bash
-./target/release/syspac list-packages
+./target/release/foji list-packages
 ```
 
 ### Version Extraction
@@ -215,7 +215,7 @@ get_pkg_version() {
 
 **After (Rust):**
 ```bash
-./target/release/syspac package-version packages/niri
+./target/release/foji package-version packages/niri
 ```
 
 ## Testing Checklist
@@ -224,10 +224,10 @@ Before deploying to production:
 
 - [ ] Tool compiles successfully: `cargo build --release`
 - [ ] All tests pass: `cargo test`
-- [ ] Lists correct packages: `./target/release/syspac list-packages`
-- [ ] Detects changes correctly: `./target/release/syspac detect-changes`
-- [ ] JSON output works: `./target/release/syspac detect-changes --format json`
-- [ ] Version parsing works: `./target/release/syspac package-version <path>`
+- [ ] Lists correct packages: `./target/release/foji list-packages`
+- [ ] Detects changes correctly: `./target/release/foji detect-changes`
+- [ ] JSON output works: `./target/release/foji detect-changes --format json`
+- [ ] Version parsing works: `./target/release/foji package-version <path>`
 - [ ] GitHub Actions workflow completes successfully
 - [ ] Packages build correctly in Docker
 - [ ] Repository updates as expected
@@ -244,11 +244,11 @@ If issues arise, you can easily rollback:
 
 ### Tool doesn't detect changes
 
-**Problem:** `syspac detect-changes` returns empty
+**Problem:** `foji detect-changes` returns empty
 **Solution:** 
 - Check if you're on a branch with commits: `git log`
-- Try specifying base ref: `syspac detect-changes --base-ref main`
-- Verify packages exist: `syspac list-packages`
+- Try specifying base ref: `foji detect-changes --base-ref main`
+- Verify packages exist: `foji list-packages`
 
 ### PKGBUILD parsing fails
 
