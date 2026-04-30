@@ -7,6 +7,3 @@
 [submodule "meli"]
 	path = packages/meli
 	url = git@github.com:poqai/meli.git
-[submodule "mgmt"]
-	path = packages/mgmt
-	url = git@github.com:poqai/mgmt.git
