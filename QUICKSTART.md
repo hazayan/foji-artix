@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with Syspac in 5 minutes.
+Get up and running with foji in 5 minutes.
 
 ## Prerequisites
 

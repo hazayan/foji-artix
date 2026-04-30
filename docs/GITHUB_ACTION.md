@@ -1,4 +1,4 @@
-# Syspac GitHub Action
+# foji GitHub Action
 
 A reusable GitHub Action that sets up the foji package management tool in your workflows.
 
@@ -25,17 +25,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Setup Syspac
+      - name: Setup foji
         uses: hazayan/foji@main
       
-      - name: Use Syspac
+      - name: Use foji
         run: foji detect-changes --paths
 ```
 
 ### With Specific Version
 
 ```yaml
-- name: Setup Syspac
+- name: Setup foji
   uses: hazayan/foji@main
   with:
     version: v0.2.0
@@ -44,7 +44,7 @@ jobs:
 ### Build from Source
 
 ```yaml
-- name: Setup Syspac (from source)
+- name: Setup foji (from source)
   uses: hazayan/foji@main
   with:
     version: build
@@ -53,7 +53,7 @@ jobs:
 ### With Custom GitHub Token
 
 ```yaml
-- name: Setup Syspac
+- name: Setup foji
   uses: hazayan/foji@main
   with:
     github-token: ${{ secrets.CUSTOM_TOKEN }}
@@ -82,7 +82,7 @@ jobs:
 ### Using Outputs
 
 ```yaml
-- name: Setup Syspac
+- name: Setup foji
   id: foji
   uses: hazayan/foji@main
 
@@ -114,7 +114,7 @@ jobs:
         with:
           submodules: recursive
       
-      - name: Setup Syspac
+      - name: Setup foji
         uses: hazayan/foji@main
       
       - name: Detect changed packages
@@ -155,7 +155,7 @@ jobs:
         with:
           submodules: recursive
       
-      - name: Setup Syspac
+      - name: Setup foji
         uses: hazayan/foji@main
       
       - name: List all packages
@@ -188,7 +188,7 @@ jobs:
         with:
           submodules: recursive
       
-      - name: Setup Syspac
+      - name: Setup foji
         uses: hazayan/foji@main
       
       - name: Get package list as JSON
@@ -230,7 +230,7 @@ Total: ~2.5-3.5 minutes (first time), ~1-1.5 minutes (cached)
 ### After (Using Action)
 
 ```yaml
-- name: Setup Syspac
+- name: Setup foji
   uses: hazayan/foji@main
   # ~5-10 seconds (download)
   # ~1 second (cached)
@@ -357,7 +357,7 @@ git push
 
 Trigger a manual release with a specific version:
 
-1. Go to **Actions** → **Release Syspac Tool**
+1. Go to **Actions** → **Release foji Tool**
 2. Click **Run workflow**
 3. Enter version (e.g., `v0.2.0`)
 4. Click **Run workflow**
@@ -373,7 +373,7 @@ gh workflow run release-foji.yml -f version=v0.2.0
 ### Custom Installation Location
 
 ```yaml
-- name: Setup Syspac
+- name: Setup foji
   uses: hazayan/foji@main
   id: foji
 
@@ -405,7 +405,7 @@ gh workflow run release-foji.yml -f version=v0.2.0
 ### Conditional Setup
 
 ```yaml
-- name: Setup Syspac (only on main branch)
+- name: Setup foji (only on main branch)
   if: github.ref == 'refs/heads/main'
   uses: hazayan/foji@main
 ```
