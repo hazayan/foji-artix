@@ -15,7 +15,7 @@ on:
         type: string
 
 env:
-  BINARY_NAME: syspac
+  BINARY_NAME: foji
 
 jobs:
   build:
@@ -26,8 +26,8 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: syspac
-            asset_name: syspac-linux-x86_64
+            artifact_name: foji
+            asset_name: foji-linux-x86_64
 
     steps:
       - name: Checkout code
@@ -118,24 +118,24 @@ jobs:
           cat > release-notes.md <<EOF
           # Syspac ${{ steps.version.outputs.version }}
 
-          Pre-built binaries for the syspac package management tool.
+          Pre-built binaries for the foji package management tool.
 
           ## Usage with GitHub Actions
 
           \`\`\`yaml
-          - uses: hazayan/syspac@main
+          - uses: hazayan/foji@main
             with:
               version: ${{ steps.version.outputs.version }}
 
-          - run: syspac detect-changes --paths
+          - run: foji detect-changes --paths
           \`\`\`
 
           ## Direct Download
 
           ```bash
           # Standard glibc version (recommended)
-          curl -L https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/syspac-linux-x86_64 -o syspac
-          chmod +x syspac
+          curl -L https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/foji-linux-x86_64 -o foji
+          chmod +x foji
           ```
           \`\`\`
 
@@ -175,7 +175,7 @@ jobs:
           gh release create "${{ steps.version.outputs.version }}" \
             --title "Syspac ${{ steps.version.outputs.version }}" \
             --notes-file release-notes.md \
-            syspac-linux-x86_64* \
+            foji-linux-x86_64* \
             || echo "Release creation failed, but continuing..."
 
       - name: Summary
@@ -183,7 +183,7 @@ jobs:
           echo "## 🎉 Release Created" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Binaries**: syspac-linux-x86_64" >> $GITHUB_STEP_SUMMARY
+          echo "**Binaries**: foji-linux-x86_64" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Use in GitHub Actions" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`yaml" >> $GITHUB_STEP_SUMMARY

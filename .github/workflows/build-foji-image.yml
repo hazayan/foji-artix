@@ -7,14 +7,14 @@ on:
       - "src/**"
       - "Cargo.toml"
       - "Cargo.lock"
-      - "Dockerfile.syspac"
+      - "Dockerfile.foji"
       - "action.yml"
-      - ".github/workflows/release-syspac.yml"
-      - ".github/workflows/build-syspac-image.yml"
+      - ".github/workflows/release-foji.yml"
+      - ".github/workflows/build-foji-image.yml"
   workflow_dispatch: {}
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/syspac
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/foji
 
 jobs:
   build-and-push:
@@ -40,13 +40,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev libz-dev
 
-      - name: Build syspac binary
+      - name: Build foji binary
         run: |
           set -e
           cargo build --release
-          cp target/release/syspac syspac-linux-x86_64
-          chmod +x syspac-linux-x86_64
-          echo "Built syspac binary at ./syspac-linux-x86_64"
+          cp target/release/foji foji-linux-x86_64
+          chmod +x foji-linux-x86_64
+          echo "Built foji binary at ./foji-linux-x86_64"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -79,7 +79,7 @@ jobs:
           VERSION_TAG="${{ steps.meta.outputs.version_tag }}"
 
           echo "Building image ${IMAGE}:${SHA_TAG}"
-          docker build -f Dockerfile.syspac -t "${IMAGE}:${SHA_TAG}" .
+          docker build -f Dockerfile.foji -t "${IMAGE}:${SHA_TAG}" .
 
           # Always tag latest from main
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
@@ -127,5 +127,5 @@ jobs:
           echo "      image: ${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
           echo "    steps:" >> $GITHUB_STEP_SUMMARY
           echo "      - uses: actions/checkout@v4" >> $GITHUB_STEP_SUMMARY
-          echo "      - run: syspac detect-changes --paths" >> $GITHUB_STEP_SUMMARY
+          echo "      - run: foji detect-changes --paths" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
