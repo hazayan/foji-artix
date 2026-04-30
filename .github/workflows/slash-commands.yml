@@ -39,7 +39,7 @@ jobs:
             core.setOutput('sha', pr.data.head.sha);
 
       - name: Checkout PR branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           ref: ${{ steps.pr.outputs.ref }}
           fetch-depth: 0
