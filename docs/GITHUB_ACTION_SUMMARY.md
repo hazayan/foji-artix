@@ -49,7 +49,7 @@ A complete GitHub Action setup that eliminates the need to build foji from sourc
 
 ### After (Using Action)
 ```yaml
-- name: Setup Syspac
+- name: Setup foji
   uses: ./  # or hazayan/foji@main for external use
   
 - name: Use foji
@@ -71,14 +71,14 @@ A complete GitHub Action setup that eliminates the need to build foji from sourc
 ### In This Repository
 
 ```yaml
-- name: Setup Syspac
+- name: Setup foji
   uses: ./  # Uses action from current repo
 ```
 
 ### In Other Repositories
 
 ```yaml
-- name: Setup Syspac
+- name: Setup foji
   uses: hazayan/foji@main
   with:
     version: latest
@@ -103,7 +103,7 @@ gh workflow run release-foji.yml -f version=v0.2.0
 
 Or use the GitHub UI:
 1. Go to **Actions** tab
-2. Click **Release Syspac Tool**
+2. Click **Release foji Tool**
 3. Click **Run workflow**
 4. Enter version: `v0.2.0`
 5. Click **Run workflow**

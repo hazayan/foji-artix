@@ -1,10 +1,10 @@
-# Syspac - System Package Repository Manager
+# foji - System Package Repository Manager
 
 A Rust-based tool for managing Artix Linux package repositories hosted on GitHub.
 
 ## Overview
 
-Syspac helps manage a GitHub-based Arch/Artix Linux package repository where packages are stored as git submodules. It provides functionality to:
+foji helps manage a GitHub-based Arch/Artix Linux package repository where packages are stored as git submodules. It provides functionality to:
 
 - Detect which packages have changed between commits
 - List all available packages in the repository

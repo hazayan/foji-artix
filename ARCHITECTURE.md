@@ -2,7 +2,7 @@
 
 ## Overview
 
-Syspac is a command-line tool for managing Artix Linux package repositories hosted on GitHub. It replaces brittle shell scripts with a robust, testable Rust implementation.
+foji is a command-line tool for managing Artix Linux package repositories hosted on GitHub. It replaces brittle shell scripts with a robust, testable Rust implementation.
 
 ## Design Goals
 

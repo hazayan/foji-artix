@@ -79,7 +79,7 @@ PR/Issue Comment (/rebuild-all)
    - When `repository_dispatch` type is `rebuild-all`, uses `foji detect-changes --all`
    - Otherwise uses normal change detection
 
-3. **Syspac Tool**:
+3. **foji Tool**:
    - `foji detect-changes` - Returns only changed packages
    - `foji detect-changes --all` - Returns all packages in repository
 

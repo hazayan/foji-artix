@@ -1,4 +1,4 @@
-name: 'Setup Syspac'
+name: 'Setup foji'
 description: 'Downloads or builds the foji package management tool'
 author: 'hazayan'
 
@@ -56,7 +56,7 @@ runs:
 
           # Build
           cargo build --release
-          SYSPAC_PATH="$(pwd)/target/release/foji"
+          FOJI_PATH="$(pwd)/target/release/foji"
           VERSION="source"
         else
           # Determine version to download
@@ -84,7 +84,7 @@ runs:
                 --output "$HOME/.local/bin/foji" 2>/dev/null; then
 
               chmod +x "$HOME/.local/bin/foji"
-              SYSPAC_PATH="$HOME/.local/bin/foji"
+              FOJI_PATH="$HOME/.local/bin/foji"
               echo "✅ Downloaded foji $VERSION"
             else
               echo "⚠️  Failed to download foji $VERSION, building from source instead"
@@ -107,21 +107,21 @@ runs:
             fi
 
             cargo build --release
-            SYSPAC_PATH="$(pwd)/target/release/foji"
+            FOJI_PATH="$(pwd)/target/release/foji"
             VERSION="source"
           fi
         fi
 
         # Verify foji works
-        if [[ -f "$SYSPAC_PATH" ]]; then
-          echo "✅ Syspac ready at: $SYSPAC_PATH"
-          "$SYSPAC_PATH" --version || echo "foji (version info not available)"
+        if [[ -f "$FOJI_PATH" ]]; then
+          echo "✅ foji ready at: $FOJI_PATH"
+          "$FOJI_PATH" --version || echo "foji (version info not available)"
 
           # Add to PATH
-          echo "$(dirname "$SYSPAC_PATH")" >> $GITHUB_PATH
+          echo "$(dirname "$FOJI_PATH")" >> $GITHUB_PATH
 
           # Set outputs
-          echo "foji-path=$SYSPAC_PATH" >> $GITHUB_OUTPUT
+          echo "foji-path=$FOJI_PATH" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
         else
           echo "❌ Failed to set up foji"

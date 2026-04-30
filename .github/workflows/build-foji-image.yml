@@ -1,4 +1,4 @@
-name: Build Syspac Docker Image
+name: Build foji Docker Image
 
 on:
   push:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   build-and-push:
-    name: Build and Push Syspac Image
+    name: Build and Push foji Image
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -106,7 +106,7 @@ jobs:
 
       - name: Summary
         run: |
-          echo "## 🐳 Syspac Docker Image Built" >> $GITHUB_STEP_SUMMARY
+          echo "## 🐳 foji Docker Image Built" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** \`${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**SHA Tag:** \`${{ steps.meta.outputs.sha_tag }}\`" >> $GITHUB_STEP_SUMMARY
