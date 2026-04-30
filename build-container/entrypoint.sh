@@ -51,7 +51,7 @@ download_repo_files() {
     local release_tag="${RELEASE_TAG:-repo}"
 
     # Download database files if they exist, but don't fail if they don't
-    for file in syspac.{db,files}{,.tar.gz}; do
+    for file in foji.{db,files}{,.tar.gz}; do
         echo "Attempting to download ${file} from tag ${release_tag}..."
         curl -sSfL -o "${file}" \
              "https://github.com/${GITHUB_REPOSITORY}/releases/download/${release_tag}/${file}" || {
@@ -129,7 +129,7 @@ build_package() {
 
 # Build changed packages
 # CHANGED_PACKAGES is expected to contain paths relative to the repo root
-# (e.g. "packages/foo"), as provided by `syspac detect-changes --paths`.
+# (e.g. "packages/foo"), as provided by `foji detect-changes --paths`.
 if [ -n "${CHANGED_PACKAGES-}" ]; then
     echo "Processing packages (paths): ${CHANGED_PACKAGES}"
     for pkg in ${CHANGED_PACKAGES}; do

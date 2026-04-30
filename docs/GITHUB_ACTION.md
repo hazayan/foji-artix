@@ -1,6 +1,6 @@
 # Syspac GitHub Action
 
-A reusable GitHub Action that sets up the syspac package management tool in your workflows.
+A reusable GitHub Action that sets up the foji package management tool in your workflows.
 
 ## Features
 
@@ -26,17 +26,17 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Setup Syspac
-        uses: hazayan/syspac@main
+        uses: hazayan/foji@main
       
       - name: Use Syspac
-        run: syspac detect-changes --paths
+        run: foji detect-changes --paths
 ```
 
 ### With Specific Version
 
 ```yaml
 - name: Setup Syspac
-  uses: hazayan/syspac@main
+  uses: hazayan/foji@main
   with:
     version: v0.2.0
 ```
@@ -45,7 +45,7 @@ jobs:
 
 ```yaml
 - name: Setup Syspac (from source)
-  uses: hazayan/syspac@main
+  uses: hazayan/foji@main
   with:
     version: build
 ```
@@ -54,7 +54,7 @@ jobs:
 
 ```yaml
 - name: Setup Syspac
-  uses: hazayan/syspac@main
+  uses: hazayan/foji@main
   with:
     github-token: ${{ secrets.CUSTOM_TOKEN }}
 ```
@@ -76,21 +76,21 @@ jobs:
 
 | Output | Description |
 |--------|-------------|
-| `syspac-path` | Full path to the syspac binary |
-| `syspac-version` | Version of syspac that was installed |
+| `foji-path` | Full path to the foji binary |
+| `foji-version` | Version of foji that was installed |
 
 ### Using Outputs
 
 ```yaml
 - name: Setup Syspac
-  id: syspac
-  uses: hazayan/syspac@main
+  id: foji
+  uses: hazayan/foji@main
 
 - name: Show version
-  run: echo "Using syspac ${{ steps.syspac.outputs.syspac-version }}"
+  run: echo "Using foji ${{ steps.foji.outputs.foji-version }}"
 
 - name: Use specific path
-  run: ${{ steps.syspac.outputs.syspac-path }} detect-changes
+  run: ${{ steps.foji.outputs.foji-path }} detect-changes
 ```
 
 ## Complete Examples
@@ -115,12 +115,12 @@ jobs:
           submodules: recursive
       
       - name: Setup Syspac
-        uses: hazayan/syspac@main
+        uses: hazayan/foji@main
       
       - name: Detect changed packages
         id: changes
         run: |
-          CHANGED=$(syspac detect-changes --paths)
+          CHANGED=$(foji detect-changes --paths)
           echo "packages=$CHANGED" >> $GITHUB_OUTPUT
   
   build:
@@ -156,13 +156,13 @@ jobs:
           submodules: recursive
       
       - name: Setup Syspac
-        uses: hazayan/syspac@main
+        uses: hazayan/foji@main
       
       - name: List all packages
-        run: syspac list-packages --verbose
+        run: foji list-packages --verbose
       
       - name: Export as JSON
-        run: syspac list-packages --format json > packages.json
+        run: foji list-packages --format json > packages.json
       
       - name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -189,12 +189,12 @@ jobs:
           submodules: recursive
       
       - name: Setup Syspac
-        uses: hazayan/syspac@main
+        uses: hazayan/foji@main
       
       - name: Get package list as JSON
         id: packages
         run: |
-          PACKAGES=$(syspac detect-changes --all --format json)
+          PACKAGES=$(foji detect-changes --all --format json)
           echo "list=$PACKAGES" >> $GITHUB_OUTPUT
   
   build:
@@ -219,7 +219,7 @@ jobs:
   uses: actions-rs/toolchain@v1
   # ~30 seconds
 
-- name: Build syspac
+- name: Build foji
   run: cargo build --release
   # ~2-3 minutes (first time)
   # ~30-60 seconds (with cache)
@@ -231,7 +231,7 @@ Total: ~2.5-3.5 minutes (first time), ~1-1.5 minutes (cached)
 
 ```yaml
 - name: Setup Syspac
-  uses: hazayan/syspac@main
+  uses: hazayan/foji@main
   # ~5-10 seconds (download)
   # ~1 second (cached)
 
@@ -246,26 +246,26 @@ Total: ~5-10 seconds (first time), ~1 second (cached)
 2. **Download Binary**: Attempts to download pre-built binary from releases
 3. **Cache**: Stores binary in GitHub Actions cache
 4. **Fallback**: If download fails, builds from source automatically
-5. **PATH Update**: Adds syspac to PATH for easy access
+5. **PATH Update**: Adds foji to PATH for easy access
 
 ## Caching
 
 The action automatically caches downloaded binaries using GitHub Actions cache:
 
-- **Cache Key**: `syspac-{version}-{os}`
-- **Cache Location**: `~/.local/bin/syspac`
+- **Cache Key**: `foji-{version}-{os}`
+- **Cache Location**: `~/.local/bin/foji`
 - **Cache Duration**: Follows GitHub's cache retention policy (usually 7 days)
 
 ### Manual Cache Control
 
 ```yaml
 # Disable caching by building from source
-- uses: hazayan/syspac@main
+- uses: hazayan/foji@main
   with:
     version: build
 
 # Clear cache by changing version
-- uses: hazayan/syspac@main
+- uses: hazayan/foji@main
   with:
     version: v0.2.1  # New version = new cache key
 ```
@@ -274,23 +274,23 @@ The action automatically caches downloaded binaries using GitHub Actions cache:
 
 ### Binary Not Found
 
-**Problem**: "syspac: command not found"
+**Problem**: "foji: command not found"
 
-**Solution**: The action adds syspac to PATH, but you need to run it after the setup step:
+**Solution**: The action adds foji to PATH, but you need to run it after the setup step:
 
 ```yaml
-- uses: hazayan/syspac@main  # Must come first
-- run: syspac detect-changes  # Now available
+- uses: hazayan/foji@main  # Must come first
+- run: foji detect-changes  # Now available
 ```
 
 ### Download Fails
 
-**Problem**: "Failed to download syspac"
+**Problem**: "Failed to download foji"
 
 **Solution**: Action automatically falls back to building from source. If you want to force source build:
 
 ```yaml
-- uses: hazayan/syspac@main
+- uses: hazayan/foji@main
   with:
     version: build
 ```
@@ -302,7 +302,7 @@ The action automatically caches downloaded binaries using GitHub Actions cache:
 **Solution**: Provide a GitHub token with appropriate permissions:
 
 ```yaml
-- uses: hazayan/syspac@main
+- uses: hazayan/foji@main
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -314,13 +314,13 @@ The action automatically caches downloaded binaries using GitHub Actions cache:
 **Solution**: Check available versions:
 
 ```bash
-gh release list --repo hazayan/syspac
+gh release list --repo hazayan/foji
 ```
 
 Or use `latest`:
 
 ```yaml
-- uses: hazayan/syspac@main
+- uses: hazayan/foji@main
   with:
     version: latest
 ```
@@ -334,8 +334,8 @@ Pre-built binaries are available for:
 
 ### Binary Naming
 
-- Standard: `syspac-linux-x86_64`
-- Static: `syspac-linux-x86_64-musl`
+- Standard: `foji-linux-x86_64`
+- Static: `foji-linux-x86_64-musl`
 
 The action automatically selects the appropriate binary for your platform.
 
@@ -365,7 +365,7 @@ Trigger a manual release with a specific version:
 ### Via Command Line
 
 ```bash
-gh workflow run release-syspac.yml -f version=v0.2.0
+gh workflow run release-foji.yml -f version=v0.2.0
 ```
 
 ## Advanced Usage
@@ -374,32 +374,32 @@ gh workflow run release-syspac.yml -f version=v0.2.0
 
 ```yaml
 - name: Setup Syspac
-  uses: hazayan/syspac@main
-  id: syspac
+  uses: hazayan/foji@main
+  id: foji
 
 - name: Copy to custom location
   run: |
     mkdir -p /opt/tools
-    cp ${{ steps.syspac.outputs.syspac-path }} /opt/tools/
+    cp ${{ steps.foji.outputs.foji-path }} /opt/tools/
 ```
 
 ### Multiple Versions
 
 ```yaml
 - name: Setup Latest
-  uses: hazayan/syspac@main
+  uses: hazayan/foji@main
   id: latest
 
 - name: Setup Specific
-  uses: hazayan/syspac@main
+  uses: hazayan/foji@main
   with:
     version: v0.1.0
   id: specific
 
 - name: Compare versions
   run: |
-    echo "Latest: ${{ steps.latest.outputs.syspac-version }}"
-    echo "Specific: ${{ steps.specific.outputs.syspac-version }}"
+    echo "Latest: ${{ steps.latest.outputs.foji-version }}"
+    echo "Specific: ${{ steps.specific.outputs.foji-version }}"
 ```
 
 ### Conditional Setup
@@ -407,7 +407,7 @@ gh workflow run release-syspac.yml -f version=v0.2.0
 ```yaml
 - name: Setup Syspac (only on main branch)
   if: github.ref == 'refs/heads/main'
-  uses: hazayan/syspac@main
+  uses: hazayan/foji@main
 ```
 
 ## Related Documentation
@@ -415,7 +415,7 @@ gh workflow run release-syspac.yml -f version=v0.2.0
 - [README.md](../README.md) - General usage
 - [QUICKSTART.md](../QUICKSTART.md) - Getting started
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - Technical details
-- [Release Workflow](.github/workflows/release-syspac.yml) - Binary build process
+- [Release Workflow](.github/workflows/release-foji.yml) - Binary build process
 
 ## Contributing
 

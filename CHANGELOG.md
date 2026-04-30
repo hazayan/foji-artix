@@ -23,7 +23,7 @@ All notable changes to this project will be documented in this file.
 #### `--all` Flag for Full Rebuilds
 ```bash
 # Rebuild all packages regardless of changes
-syspac detect-changes --all
+foji detect-changes --all
 ```
 
 #### Slash Commands Support
@@ -142,12 +142,12 @@ The tool is backward compatible, but now supports:
 
 ```bash
 # New: Rebuild all packages
-syspac detect-changes --all
+foji detect-changes --all
 
 # Existing commands work unchanged
-syspac detect-changes
-syspac list-packages
-syspac package-version <path>
+foji detect-changes
+foji list-packages
+foji package-version <path>
 ```
 
 #### Test the Changes

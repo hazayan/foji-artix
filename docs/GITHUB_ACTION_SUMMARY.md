@@ -2,7 +2,7 @@
 
 ## What Was Created
 
-A complete GitHub Action setup that eliminates the need to build syspac from source in every workflow run.
+A complete GitHub Action setup that eliminates the need to build foji from source in every workflow run.
 
 ## New Files
 
@@ -10,9 +10,9 @@ A complete GitHub Action setup that eliminates the need to build syspac from sou
    - Downloads pre-built binaries from releases
    - Falls back to building from source if needed
    - Caches binaries for faster subsequent runs
-   - Adds syspac to PATH automatically
+   - Adds foji to PATH automatically
 
-2. **`.github/workflows/release-syspac.yml`** - Binary release workflow
+2. **`.github/workflows/release-foji.yml`** - Binary release workflow
    - Builds binaries for Linux (glibc and musl)
    - Creates GitHub releases with pre-built binaries
    - Triggers on code changes or manual dispatch
@@ -38,11 +38,11 @@ A complete GitHub Action setup that eliminates the need to build syspac from sou
 - name: Cache dependencies
   uses: actions/cache@v3
   
-- name: Build syspac
+- name: Build foji
   run: cargo build --release
   
-- name: Use syspac
-  run: ./target/release/syspac detect-changes
+- name: Use foji
+  run: ./target/release/foji detect-changes
 ```
 
 **Time**: ~2-3 minutes (first run), ~30-60 seconds (cached)
@@ -50,10 +50,10 @@ A complete GitHub Action setup that eliminates the need to build syspac from sou
 ### After (Using Action)
 ```yaml
 - name: Setup Syspac
-  uses: ./  # or hazayan/syspac@main for external use
+  uses: ./  # or hazayan/foji@main for external use
   
-- name: Use syspac
-  run: syspac detect-changes
+- name: Use foji
+  run: foji detect-changes
 ```
 
 **Time**: ~5-10 seconds (first run), ~1 second (cached)
@@ -79,7 +79,7 @@ A complete GitHub Action setup that eliminates the need to build syspac from sou
 
 ```yaml
 - name: Setup Syspac
-  uses: hazayan/syspac@main
+  uses: hazayan/foji@main
   with:
     version: latest
 ```
@@ -98,7 +98,7 @@ Binaries are automatically built and released when you push changes to:
 Trigger a release with a specific version:
 
 ```bash
-gh workflow run release-syspac.yml -f version=v0.2.0
+gh workflow run release-foji.yml -f version=v0.2.0
 ```
 
 Or use the GitHub UI:
@@ -131,10 +131,10 @@ The release workflow builds multiple variants:
 
 ```bash
 # Standard (recommended)
-https://github.com/hazayan/syspac/releases/download/v0.2.0/syspac-linux-x86_64
+https://github.com/hazayan/foji/releases/download/v0.2.0/foji-linux-x86_64
 
 # Static (no dependencies)
-https://github.com/hazayan/syspac/releases/download/v0.2.0/syspac-linux-x86_64-musl
+https://github.com/hazayan/foji/releases/download/v0.2.0/foji-linux-x86_64-musl
 ```
 
 ## Testing the Action
@@ -167,7 +167,7 @@ act -j preflight -W .github/workflows/build.yml
 ### For External Users
 
 - ✅ **Easy adoption**: One-line setup
-- ✅ **No Rust required**: Use syspac without installing Rust
+- ✅ **No Rust required**: Use foji without installing Rust
 - ✅ **Version pinning**: Pin to specific versions for reproducibility
 - ✅ **Auto-updates**: Use `latest` to always get newest version
 
@@ -184,12 +184,12 @@ act -j preflight -W .github/workflows/build.yml
 
 ```bash
 # Trigger the first release
-git add action.yml .github/workflows/release-syspac.yml
-git commit -m "feat: add GitHub Action for syspac"
+git add action.yml .github/workflows/release-foji.yml
+git commit -m "feat: add GitHub Action for foji"
 git push
 
 # Or manually trigger
-gh workflow run release-syspac.yml -f version=v0.2.0
+gh workflow run release-foji.yml -f version=v0.2.0
 ```
 
 ### Step 3: Verify
@@ -213,7 +213,7 @@ To make the action available on GitHub Marketplace:
 
 2. Create a release for the action itself:
    ```bash
-   git tag -a v1.0.0 -m "Release syspac action v1.0.0"
+   git tag -a v1.0.0 -m "Release foji action v1.0.0"
    git push origin v1.0.0
    ```
 
@@ -241,12 +241,12 @@ To make the action available on GitHub Marketplace:
 
 ### Action Fails to Download Binary
 
-**Symptom**: "Failed to download syspac vX.Y.Z"
+**Symptom**: "Failed to download foji vX.Y.Z"
 
 **Cause**: Release doesn't exist yet
 
 **Solution**: 
-1. Run release workflow first: `gh workflow run release-syspac.yml -f version=v0.2.0`
+1. Run release workflow first: `gh workflow run release-foji.yml -f version=v0.2.0`
 2. Or use `version: build` to compile from source temporarily
 
 ### Binary Doesn't Work
@@ -276,9 +276,9 @@ permissions:
 ## Related Documentation
 
 - [GITHUB_ACTION.md](GITHUB_ACTION.md) - Complete action documentation
-- [README.md](../README.md) - General syspac documentation
+- [README.md](../README.md) - General foji documentation
 - [QUICKSTART.md](../QUICKSTART.md) - Getting started guide
-- [Release Workflow](../.github/workflows/release-syspac.yml) - Binary build workflow
+- [Release Workflow](../.github/workflows/release-foji.yml) - Binary build workflow
 
 ## Questions?
 

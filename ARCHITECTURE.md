@@ -16,7 +16,7 @@ Syspac is a command-line tool for managing Artix Linux package repositories host
 ## Module Structure
 
 ```
-syspac/
+foji/
 ├── src/
 │   ├── main.rs          # CLI interface and command routing
 │   ├── git.rs           # Git operations (libgit2)
@@ -195,7 +195,7 @@ pub fn parse_pkgname(pkgbuild_path: &str) -> Result<String>
 ### Change Detection Flow
 
 ```
-User runs: syspac detect-changes
+User runs: foji detect-changes
 
 main.rs
   └─> Commands::DetectChanges
@@ -212,7 +212,7 @@ main.rs
 ### Package Listing Flow
 
 ```
-User runs: syspac list-packages --verbose
+User runs: foji list-packages --verbose
 
 main.rs
   └─> Commands::ListPackages
