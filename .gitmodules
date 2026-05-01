@@ -1,9 +1,0 @@
-[submodule "aura"]
-	path = packages/aura
-	url = git@github.com:poqai/aura.git
-[submodule "paru"]
-	path = packages/paru
-	url = git@github.com:poqai/paru.git
-[submodule "meli"]
-	path = packages/meli
-	url = git@github.com:poqai/meli.git
