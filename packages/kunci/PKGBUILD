@@ -1,0 +1,25 @@
+# Maintainer: Yassine <yassine@hazayan.dev>
+pkgname="kunci"
+pkgver="0.10.0"
+pkgrel="1"
+pkgdesc="kunci: a rust implementation of the clevis / tang protocol"
+url="https://github.com/hazayan/kunci"
+source=("$pkgname-$pkgver.tar.gz::https://github.com/hazayan/kunci/archive/v$pkgver.tar.gz")
+arch=("x86_64" "aarch64")
+license=("BSD-2")
+makedepends=("cargo")
+sha256sums=("e2ad983682f3df7b90be530208b7668ea1b41f858719eaa8bb1fe149926dde5c")
+options=("!lto")
+
+build () {
+  cd "$srcdir/$pkgname-$pkgver"
+  RUSTFLAGS="-C link-self-contained=yes -C linker=rust-lld" \
+  make static-full
+}
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+
+  install -Dm755 target/x86_64-unknown-linux-musl/release/kunci-client "${pkgdir}/usr/local/bin/kunci-server"
+  install -Dm755 target/x86_64-unknown-linux-musl/release/kunci-client "${pkgdir}/usr/local/bin/kunci-client"
+}
