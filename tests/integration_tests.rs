@@ -39,9 +39,14 @@ fn create_test_repo() -> TempDir {
 
 /// Helper to create a simple PKGBUILD file
 fn create_pkgbuild(dir: &Path, pkgver: &str, pkgrel: &str) {
+    let pkgname = dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("test-package");
+
     let content = format!(
         r#"# Maintainer: Test <test@example.com>
-pkgname=test-package
+pkgname={}
 pkgver={}
 pkgrel={}
 pkgdesc="Test package"
@@ -52,7 +57,7 @@ package() {{
     echo "test"
 }}
 "#,
-        pkgver, pkgrel
+        pkgname, pkgver, pkgrel
     );
 
     fs::write(dir.join("PKGBUILD"), content).unwrap();

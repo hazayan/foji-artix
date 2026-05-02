@@ -77,7 +77,7 @@ build_package() {
     local pkg_dir=$1
     local pkg_name
     pkg_name=$(basename "${pkg_dir}")
-    local build_log="${REPO_ROOT}/${pkg_name}-build.log"
+    local build_log="/tmp/${pkg_name}-build.log"
 
     echo "============================================"
     echo "Starting build for ${pkg_name}"
@@ -91,7 +91,9 @@ build_package() {
     sudo chown -R builder:builder "/build/build/${pkg_name}"
     cd "/build/build/${pkg_name}"
 
-    # Build package with detailed logging
+    # Build package with detailed logging. Capture the command group's status
+    # explicitly so tee cannot mask a failed makepkg invocation.
+    set +e
     {
         echo "Build initiated at $(date)"
         echo "Package: ${pkg_name}"
@@ -105,20 +107,34 @@ build_package() {
         # Actually build the package
         if ! makepkg -s --noconfirm; then
             echo "ERROR: Package build failed!"
-            return 1
+            exit 1
         fi
 
         echo "Build completed successfully"
         echo "Built files:"
-        ls -l *.pkg.tar.zst || echo "No package files found!"
+        ls -l ./*.pkg.tar.zst
         echo "----------------------------------------"
         echo "Build completed at $(date)"
     } 2>&1 | tee "${build_log}"
+    local build_status=${PIPESTATUS[0]}
+    set -e
+
+    if [ "${build_status}" -ne 0 ]; then
+        echo "ERROR: Build failed for ${pkg_name}; see ${build_log}"
+        return "${build_status}"
+    fi
 
     # Move built packages to repository
     echo "Moving built packages to repository..."
     sudo mkdir -p "${REPO_ROOT}/x86_64"
-    if ! sudo find . -name "*.pkg.tar.zst" -exec sudo mv -v {} "${REPO_ROOT}/x86_64/" \;; then
+    shopt -s nullglob
+    local built_packages=( ./*.pkg.tar.zst )
+    if [ "${#built_packages[@]}" -eq 0 ]; then
+        echo "ERROR: Build completed without producing package artifacts"
+        return 1
+    fi
+
+    if ! sudo mv -v "${built_packages[@]}" "${REPO_ROOT}/x86_64/"; then
         echo "ERROR: Failed to move built packages!"
         return 1
     fi

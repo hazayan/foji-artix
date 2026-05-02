@@ -3,6 +3,8 @@ use git2::Repository;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::pkgbuild;
+
 /// Represents a package in the repository
 #[derive(Debug, Clone)]
 pub struct Package {
@@ -48,15 +50,7 @@ fn find_submodule_packages(repo: &Repository, repo_path: &Path) -> Result<Vec<Pa
         let pkgbuild_path = full_path.join("PKGBUILD");
 
         if pkgbuild_path.exists() {
-            let name = submodule
-                .name()
-                .unwrap_or_else(|| {
-                    submodule_path
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("unknown")
-                })
-                .to_string();
+            let name = pkgbuild::parse_pkgname(&pkgbuild_path.to_string_lossy())?;
 
             packages.push(Package {
                 name,
@@ -99,11 +93,7 @@ fn find_direct_packages(repo_path: &Path) -> Result<Vec<Package>> {
         if path.is_dir() {
             let pkgbuild_path = path.join("PKGBUILD");
             if pkgbuild_path.exists() {
-                let name = path
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("unknown")
-                    .to_string();
+                let name = pkgbuild::parse_pkgname(&pkgbuild_path.to_string_lossy())?;
 
                 let rel_path = path
                     .strip_prefix(repo_path)
@@ -127,11 +117,7 @@ fn find_direct_packages(repo_path: &Path) -> Result<Vec<Package>> {
                     if sub_path.is_dir() && !is_submodule_dir(&sub_path) {
                         let pkgbuild_path = sub_path.join("PKGBUILD");
                         if pkgbuild_path.exists() {
-                            let name = sub_path
-                                .file_name()
-                                .and_then(|n| n.to_str())
-                                .unwrap_or("unknown")
-                                .to_string();
+                            let name = pkgbuild::parse_pkgname(&pkgbuild_path.to_string_lossy())?;
 
                             let rel_path = sub_path
                                 .strip_prefix(repo_path)
