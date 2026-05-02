@@ -1,0 +1,28 @@
+--- a/packaging/arch/booster-install	2025-09-02 22:13:30.046540523 +0200
++++ b/packaging/arch/booster-install	2025-09-02 22:18:31.935368117 +0200
+@@ -27,6 +27,7 @@
+   read -r pkgbase < "${kernel}/pkgbase"
+ 
+   booster build --force --kernel-version ${kernel##/usr/lib/modules/} /boot/booster-${pkgbase}.img &
++  booster build --universal --force --kernel-version ${kernel##/usr/lib/modules/} /boot/booster-${pkgbase}-universal.img &
+   install -Dm644 "${kernel}/vmlinuz" "/boot/vmlinuz-${pkgbase}"
+ done
+ 
+--- a/packaging/arch/booster-remove	2025-09-02 22:13:45.247839554 +0200
++++ b/packaging/arch/booster-remove	2025-09-02 22:18:14.887792029 +0200
+@@ -27,4 +27,5 @@
+   read -r pkgbase < "${kernel}/pkgbase"
+ 
+   rm -f /boot/booster-${pkgbase}.img
++  rm -f /boot/booster-${pkgbase}-universal.img
+ done
+--- a/packaging/arch/regenerate_images	2025-09-02 22:14:44.995637775 +0200
++++ b/packaging/arch/regenerate_images	2025-09-02 22:19:07.091063706 +0200
+@@ -11,6 +11,7 @@
+   read -r pkgbase < "${kernel}/pkgbase"
+ 
+   booster build --force --kernel-version ${kernel##/usr/lib/modules/} /boot/booster-${pkgbase}.img &
++  booster build --universal --force --kernel-version ${kernel##/usr/lib/modules/} /boot/booster-${pkgbase}-universal.img &
+   install -Dm644 "${kernel}/vmlinuz" "/boot/vmlinuz-${pkgbase}"
+ done
+ 
