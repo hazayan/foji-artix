@@ -7,7 +7,7 @@ url="https://github.com/hazayan/kunci"
 source=("$pkgname-$pkgver.tar.gz::https://github.com/hazayan/kunci/archive/v$pkgver.tar.gz")
 arch=("x86_64" "aarch64")
 license=("BSD-2")
-makedepends=("cargo" "musl")
+makedepends=("cargo" "musl" "rust-musl")
 sha256sums=("e2ad983682f3df7b90be530208b7668ea1b41f858719eaa8bb1fe149926dde5c")
 options=("!lto")
 
