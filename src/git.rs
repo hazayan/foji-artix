@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
-use git2::{DiffOptions, Oid, Repository};
+use git2::{Oid, Repository};
 use std::collections::HashSet;
 
-use crate::package::{find_all_packages, Package};
+use crate::package::{Package, find_all_packages};
 
 /// Detects packages that have changed between the base ref and HEAD
 pub fn detect_changed_packages(repo_path: &str, base_ref: Option<&str>) -> Result<Vec<String>> {
@@ -111,27 +111,6 @@ fn find_changed_packages_between_commits(
     let mut result: Vec<String> = changed_packages.into_iter().collect();
     result.sort();
     Ok(result)
-}
-
-/// Checks if a path has changes between two commits
-pub fn has_path_changed(repo_path: &str, path: &str, base_ref: &str) -> Result<bool> {
-    let repo = Repository::open(repo_path)?;
-
-    let base_object = repo.revparse_single(base_ref)?;
-    let base_commit = base_object.peel_to_commit()?;
-
-    let head = repo.head()?;
-    let head_commit = head.peel_to_commit()?;
-
-    let base_tree = base_commit.tree()?;
-    let head_tree = head_commit.tree()?;
-
-    let mut diff_opts = DiffOptions::new();
-    diff_opts.pathspec(path);
-
-    let diff = repo.diff_tree_to_tree(Some(&base_tree), Some(&head_tree), Some(&mut diff_opts))?;
-
-    Ok(diff.deltas().len() > 0)
 }
 
 #[cfg(test)]

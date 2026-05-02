@@ -12,8 +12,6 @@ pub struct Package {
     pub path: String,
     /// Full path to PKGBUILD
     pub pkgbuild_path: String,
-    /// Whether this is a git submodule
-    pub is_submodule: bool,
 }
 
 /// Finds all packages in the repository
@@ -64,7 +62,6 @@ fn find_submodule_packages(repo: &Repository, repo_path: &Path) -> Result<Vec<Pa
                 name,
                 path: submodule_path.to_string_lossy().to_string(),
                 pkgbuild_path: pkgbuild_path.to_string_lossy().to_string(),
-                is_submodule: true,
             });
         }
     }
@@ -88,15 +85,14 @@ fn find_direct_packages(repo_path: &Path) -> Result<Vec<Package>> {
         }
 
         // Skip hidden directories and common non-package directories
-        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-            if name.starts_with('.')
+        if let Some(name) = path.file_name().and_then(|n| n.to_str())
+            && (name.starts_with('.')
                 || name == "target"
                 || name == "node_modules"
                 || name == "build-container"
-                || name == "repo"
-            {
-                continue;
-            }
+                || name == "repo")
+        {
+            continue;
         }
 
         // Check if this directory has a PKGBUILD
@@ -119,39 +115,35 @@ fn find_direct_packages(repo_path: &Path) -> Result<Vec<Package>> {
                     name,
                     path: rel_path,
                     pkgbuild_path: pkgbuild_path.to_string_lossy().to_string(),
-                    is_submodule: false,
                 });
                 continue;
             }
 
             // Check one level deeper
             if let Ok(entries) = fs::read_dir(&path) {
-                for sub_entry in entries {
-                    if let Ok(sub_entry) = sub_entry {
-                        let sub_path = sub_entry.path();
+                for sub_entry in entries.flatten() {
+                    let sub_path = sub_entry.path();
 
-                        if sub_path.is_dir() && !is_submodule_dir(&sub_path) {
-                            let pkgbuild_path = sub_path.join("PKGBUILD");
-                            if pkgbuild_path.exists() {
-                                let name = sub_path
-                                    .file_name()
-                                    .and_then(|n| n.to_str())
-                                    .unwrap_or("unknown")
-                                    .to_string();
+                    if sub_path.is_dir() && !is_submodule_dir(&sub_path) {
+                        let pkgbuild_path = sub_path.join("PKGBUILD");
+                        if pkgbuild_path.exists() {
+                            let name = sub_path
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("unknown")
+                                .to_string();
 
-                                let rel_path = sub_path
-                                    .strip_prefix(repo_path)
-                                    .unwrap_or(&sub_path)
-                                    .to_string_lossy()
-                                    .to_string();
+                            let rel_path = sub_path
+                                .strip_prefix(repo_path)
+                                .unwrap_or(&sub_path)
+                                .to_string_lossy()
+                                .to_string();
 
-                                packages.push(Package {
-                                    name,
-                                    path: rel_path,
-                                    pkgbuild_path: pkgbuild_path.to_string_lossy().to_string(),
-                                    is_submodule: false,
-                                });
-                            }
+                            packages.push(Package {
+                                name,
+                                path: rel_path,
+                                pkgbuild_path: pkgbuild_path.to_string_lossy().to_string(),
+                            });
                         }
                     }
                 }
