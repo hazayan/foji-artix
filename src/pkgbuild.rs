@@ -68,6 +68,38 @@ pub fn parse_version(pkgbuild_path: &str) -> Result<PackageVersion> {
     Ok(PackageVersion { pkgver, pkgrel })
 }
 
+/// Extracts the package name from a PKGBUILD.
+pub fn parse_pkgname(pkgbuild_path: &str) -> Result<String> {
+    let path = Path::new(pkgbuild_path);
+
+    if !path.exists() {
+        anyhow::bail!("PKGBUILD not found at: {}", pkgbuild_path);
+    }
+
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg(format!(
+            "source '{}' 2>/dev/null && printf '%s\\n' \"$pkgname\"",
+            pkgbuild_path
+        ))
+        .output()
+        .context("Failed to execute bash to parse PKGBUILD")?;
+
+    if !output.status.success() {
+        anyhow::bail!("Failed to source PKGBUILD at: {}", pkgbuild_path);
+    }
+
+    let stdout =
+        String::from_utf8(output.stdout).context("Failed to parse bash output as UTF-8")?;
+
+    let pkgname = stdout.trim().to_string();
+    if pkgname.is_empty() {
+        anyhow::bail!("pkgname is empty in PKGBUILD");
+    }
+
+    Ok(pkgname)
+}
+
 #[cfg(test)]
 fn parse_version_simple(pkgbuild_path: &str) -> Result<PackageVersion> {
     let content = std::fs::read_to_string(pkgbuild_path)

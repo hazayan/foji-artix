@@ -1,13 +1,18 @@
 name: Build and Update Repository (Rust)
 
 on:
-  push:
-    branches: ["**"]
-    paths-ignore:
-      - "**.md"
-      - "LICENSE"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "packages/**"
+      - "build-container/**"
+      - ".github/workflows/build.yml"
   repository_dispatch:
     types: [rebuild-all]
+
+concurrency:
+  group: package-repository-release
+  cancel-in-progress: false
 
 env:
   RELEASE_TAG: repo
@@ -16,100 +21,67 @@ env:
 jobs:
   preflight:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/${{ github.repository_owner }}/foji:latest
     steps:
       - name: Checkout code with submodules
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event_name == 'repository_dispatch' && (github.event.client_payload.sha || github.event.client_payload.ref) || github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 0
           submodules: recursive
 
-      - name: Debug foji image environment
-        shell: bash
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install system dependencies
         run: |
-          echo "User: $(whoami)"
-          echo "PATH: $PATH"
-          echo "Workspace: ${GITHUB_WORKSPACE}"
-          echo "Listing /usr/local/bin:"
-          ls -l /usr/local/bin || echo "/usr/local/bin not found"
-          echo "Where is foji?"
-          command -v foji || echo "foji not in PATH"
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev libz-dev
 
-      - name: Fix repository ownership for container user
-        shell: bash
+      - name: Build foji from checked-out ref
+        run: cargo build --release
+
+      - name: Debug foji environment
         run: |
-          # foji (via libgit2) requires the repo to be owned by the current user.
-          # The container user should already own the workspace; if not, adjust directly.
-          chown -R "$(id -u):$(id -g)" "${GITHUB_WORKSPACE}" || true
-
-      - name: Detect changed packages
-        id: changes
-        shell: bash
-        run: |
-          # Check if this is a rebuild-all command
-          if [[ "${{ github.event_name }}" == "repository_dispatch" ]] && [[ "${{ github.event.action }}" == "rebuild-all" ]]; then
-            echo "🔨 Rebuild all packages requested"
-            CHANGED=$(foji detect-changes --all --paths)
-          else
-            echo "🔍 Detecting changed packages"
-            CHANGED=$(foji detect-changes --paths)
-          fi
-
-          echo "Changed packages to build: $CHANGED"
-          echo "packages=${CHANGED}" >> $GITHUB_OUTPUT
-
-          # Also get JSON output for debugging
-          echo "JSON output:"
-          foji detect-changes --paths --format json
+          echo "Git ref: ${GITHUB_REF}"
+          echo "Git SHA: $(git rev-parse HEAD)"
+          ./target/release/foji --help >/dev/null
 
       - name: List all packages (debug)
         shell: bash
         run: |
           echo "All packages in repository:"
-          foji list-packages --verbose
+          ./target/release/foji list-packages --verbose
 
       - name: List current packages (source of truth)
         id: current_pkgs
         shell: bash
         run: |
           # Get packages as newline-separated list and join into a single space-separated string
-          mapfile -t pkgs < <(foji list-packages)
+          mapfile -t pkgs < <(./target/release/foji list-packages)
+          mapfile -t pkg_paths < <(./target/release/foji list-packages --paths)
+          versions=()
+          for pkg_path in "${pkg_paths[@]}"; do
+            versions+=( "$(./target/release/foji package-version "${pkg_path}")" )
+          done
+
           CURRENT="${pkgs[*]}"
+          CURRENT_PATHS="${pkg_paths[*]}"
+          CURRENT_VERSIONS="${versions[*]}"
           echo "Current packages: ${CURRENT}"
+          echo "Current package paths: ${CURRENT_PATHS}"
+          echo "Current package versions: ${CURRENT_VERSIONS}"
           echo "current=${CURRENT}" >> "$GITHUB_OUTPUT"
-
-      - name: Check package source changes
-        id: package_sources
-        shell: bash
-        run: |
-          set -e
-
-          CHANGED=false
-
-          if [[ "${{ github.event_name }}" == "repository_dispatch" ]] && [[ "${{ github.event.action }}" == "rebuild-all" ]]; then
-            CHANGED=true
-          elif [[ -n "${{ github.event.before }}" ]] &&
-               [[ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]] &&
-               git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
-            if ! git diff --quiet "${{ github.event.before }}" HEAD -- packages .gitmodules; then
-              CHANGED=true
-            fi
-          elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if ! git diff --quiet HEAD^ HEAD -- packages .gitmodules; then
-              CHANGED=true
-            fi
-          else
-            CHANGED=true
-          fi
-
-          echo "Package source tree changed: ${CHANGED}"
-          echo "changed=${CHANGED}" >> "$GITHUB_OUTPUT"
+          echo "current_paths=${CURRENT_PATHS}" >> "$GITHUB_OUTPUT"
+          echo "current_versions=${CURRENT_VERSIONS}" >> "$GITHUB_OUTPUT"
 
     outputs:
-      packages: ${{ steps.changes.outputs.packages }}
       current_packages: ${{ steps.current_pkgs.outputs.current }}
-      package_sources_changed: ${{ steps.package_sources.outputs.changed }}
+      current_package_paths: ${{ steps.current_pkgs.outputs.current_paths }}
+      current_package_versions: ${{ steps.current_pkgs.outputs.current_versions }}
 
   build:
     runs-on: ubuntu-latest
@@ -117,12 +89,12 @@ jobs:
       contents: write
     needs:
       - preflight
-    if: needs.preflight.outputs.packages != '' || needs.preflight.outputs.package_sources_changed == 'true'
 
     steps:
       - name: Checkout code with submodules
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event_name == 'repository_dispatch' && (github.event.client_payload.sha || github.event.client_payload.ref) || github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 0
           submodules: recursive
 
@@ -210,6 +182,50 @@ jobs:
             fi
           done
 
+      - name: Determine package build targets
+        id: build_targets
+        working-directory: repo/x86_64
+        run: |
+          set -e
+
+          CURRENT="${{ steps.current_pkgs.outputs.current }}"
+          CURRENT_PATHS="${{ needs.preflight.outputs.current_package_paths }}"
+          CURRENT_VERSIONS="${{ needs.preflight.outputs.current_package_versions }}"
+
+          declare -A targets=()
+
+          read -r -a current_names <<< "${CURRENT}"
+          read -r -a current_paths <<< "${CURRENT_PATHS}"
+          read -r -a current_versions <<< "${CURRENT_VERSIONS}"
+
+          shopt -s nullglob
+          for i in "${!current_paths[@]}"; do
+            pkg_path="${current_paths[$i]}"
+            pkg_name="${current_names[$i]}"
+            pkg_version="${current_versions[$i]}"
+            found=false
+
+            for pkg_file in ./*.pkg.tar.*; do
+              if [[ "${pkg_file}" == *.sig ]]; then
+                continue
+              fi
+
+              if [[ "${pkg_file##*/}" == "${pkg_name}-${pkg_version}-"*.pkg.tar.* ]]; then
+                found=true
+                break
+              fi
+            done
+
+            if [ "${found}" = false ]; then
+              echo "Current package ${pkg_name}-${pkg_version} is missing from release assets; scheduling build."
+              targets["${pkg_path}"]=1
+            fi
+          done
+
+          BUILD_TARGETS="${!targets[*]}"
+          echo "Package paths to build: ${BUILD_TARGETS}"
+          echo "packages=${BUILD_TARGETS}" >> "$GITHUB_OUTPUT"
+
       - name: Import GPG key
         run: |
           gpg --import --no-tty <<<"${{ secrets.GPG_KEY }}"
@@ -220,12 +236,13 @@ jobs:
           docker build -t package-builder build-container/
 
       - name: Build packages
+        if: steps.build_targets.outputs.packages != ''
         run: |
           docker run --rm \
             --privileged \
             -e GITHUB_REPOSITORY="${{ github.repository }}" \
             -e RELEASE_TAG="${{ env.RELEASE_TAG }}" \
-            -e CHANGED_PACKAGES="${{ needs.preflight.outputs.packages }}" \
+            -e CHANGED_PACKAGES="${{ steps.build_targets.outputs.packages }}" \
             -e GPG_KEY_DATA="${{ secrets.GPG_KEY }}" \
             -e GPG_KEY_ID="${{ vars.GPG_KEY_ID }}" \
             -v ${{ github.workspace }}:/build \
@@ -326,7 +343,7 @@ jobs:
           cat > release-notes.md <<'EOF'
           Last updated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
 
-          Built packages in this update: ${{ needs.preflight.outputs.packages }}
+          Built packages in this update: ${{ steps.build_targets.outputs.packages }}
 
           ## Usage
 
@@ -350,7 +367,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          echo "📤 Updating release with all packages (old + new, pruned to current set)..."
+          echo "📤 Updating the single package repository release..."
 
           # Ensure the directory has at least one file (for diagnostics / debug)
           if [ ! "$(ls -A repo/x86_64)" ]; then
@@ -384,33 +401,48 @@ jobs:
             exit 0
           fi
 
-          # Delete existing release and tag if they exist
-          echo "Deleting old release (if any)..."
-          gh release delete ${{ env.RELEASE_TAG }} --yes || echo "No existing release to delete"
-          git tag -d ${{ env.RELEASE_TAG }} || echo "No existing tag to delete"
-          git push origin :refs/tags/${{ env.RELEASE_TAG }} || echo "No remote tag to delete"
+          if gh release view "${{ env.RELEASE_TAG }}" >/dev/null 2>&1; then
+            echo "Release ${{ env.RELEASE_TAG }} exists; updating it in place."
+            gh release edit "${{ env.RELEASE_TAG }}" \
+              --title "Package Repository" \
+              --notes-file release-notes.md
+          else
+            echo "Release ${{ env.RELEASE_TAG }} does not exist; creating it once."
+            gh release create "${{ env.RELEASE_TAG }}" \
+              --title "Package Repository" \
+              --notes-file release-notes.md
+          fi
 
-          # Build argument list for gh release create based on existing files
-          ARGS=( "${{ env.RELEASE_TAG }}" --title "Package Repository" --notes-file release-notes.md )
-
+          UPLOADS=()
           if [ "$HAS_PKGS" = true ]; then
-            ARGS+=( repo/x86_64/*.pkg.tar.* )
+            UPLOADS+=( repo/x86_64/*.pkg.tar.* )
           fi
 
           if [ "$HAS_DB" = true ]; then
             # Only include DB/files patterns that actually match
             for f in repo/x86_64/foji.db* repo/x86_64/foji.files*; do
               if [ -e "$f" ]; then
-                ARGS+=( "$f" )
+                UPLOADS+=( "$f" )
               fi
             done
           fi
 
-          echo "Creating new release with current packages and DB (if any)..."
-          gh release create "${ARGS[@]}"
+          echo "Uploading current package repository assets..."
+          gh release upload "${{ env.RELEASE_TAG }}" "${UPLOADS[@]}" --clobber
 
-          # Force update tag
-          git tag -f ${{ env.RELEASE_TAG }}
-          git push -f origin ${{ env.RELEASE_TAG }}
+          printf '%s\n' "${UPLOADS[@]##*/}" > /tmp/current-release-assets.txt
+
+          echo "Deleting obsolete package repository assets from release..."
+          gh release view "${{ env.RELEASE_TAG }}" --json assets -q '.assets[].name' |
+            while IFS= read -r asset; do
+              case "$asset" in
+                *.pkg.tar.*|foji.db*|foji.files*)
+                  if ! grep -qxF "$asset" /tmp/current-release-assets.txt; then
+                    echo "Deleting obsolete release asset: $asset"
+                    gh release delete-asset "${{ env.RELEASE_TAG }}" "$asset" --yes
+                  fi
+                  ;;
+              esac
+            done
 
           echo "✅ Release updated successfully"
