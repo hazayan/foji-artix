@@ -79,9 +79,37 @@ jobs:
           echo "Current packages: ${CURRENT}"
           echo "current=${CURRENT}" >> "$GITHUB_OUTPUT"
 
+      - name: Check package source changes
+        id: package_sources
+        shell: bash
+        run: |
+          set -e
+
+          CHANGED=false
+
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]] && [[ "${{ github.event.action }}" == "rebuild-all" ]]; then
+            CHANGED=true
+          elif [[ -n "${{ github.event.before }}" ]] &&
+               [[ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]] &&
+               git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            if ! git diff --quiet "${{ github.event.before }}" HEAD -- packages .gitmodules; then
+              CHANGED=true
+            fi
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            if ! git diff --quiet HEAD^ HEAD -- packages .gitmodules; then
+              CHANGED=true
+            fi
+          else
+            CHANGED=true
+          fi
+
+          echo "Package source tree changed: ${CHANGED}"
+          echo "changed=${CHANGED}" >> "$GITHUB_OUTPUT"
+
     outputs:
       packages: ${{ steps.changes.outputs.packages }}
       current_packages: ${{ steps.current_pkgs.outputs.current }}
+      package_sources_changed: ${{ steps.package_sources.outputs.changed }}
 
   build:
     runs-on: ubuntu-latest
@@ -89,7 +117,7 @@ jobs:
       contents: write
     needs:
       - preflight
-    if: needs.preflight.outputs.packages != ''
+    if: needs.preflight.outputs.packages != '' || needs.preflight.outputs.package_sources_changed == 'true'
 
     steps:
       - name: Checkout code with submodules

@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use std::fs;
 use std::path::Path;
 use std::process::Command;
 
@@ -69,10 +68,9 @@ pub fn parse_version(pkgbuild_path: &str) -> Result<PackageVersion> {
     Ok(PackageVersion { pkgver, pkgrel })
 }
 
-/// Simple regex-based parser as a fallback (less reliable but doesn't require bash)
-/// Only handles simple variable assignments
-pub fn parse_version_simple(pkgbuild_path: &str) -> Result<PackageVersion> {
-    let content = fs::read_to_string(pkgbuild_path)
+#[cfg(test)]
+fn parse_version_simple(pkgbuild_path: &str) -> Result<PackageVersion> {
+    let content = std::fs::read_to_string(pkgbuild_path)
         .context(format!("Failed to read PKGBUILD at {}", pkgbuild_path))?;
 
     let mut pkgver = None;
@@ -100,7 +98,7 @@ pub fn parse_version_simple(pkgbuild_path: &str) -> Result<PackageVersion> {
     Ok(PackageVersion { pkgver, pkgrel })
 }
 
-/// Extracts value from a simple bash variable assignment
+#[cfg(test)]
 fn extract_value(line: &str, prefix: &str) -> String {
     let value = line[prefix.len()..].trim();
 
@@ -112,33 +110,6 @@ fn extract_value(line: &str, prefix: &str) -> String {
     } else {
         value.to_string()
     }
-}
-
-/// Extracts the package name from a PKGBUILD
-pub fn parse_pkgname(pkgbuild_path: &str) -> Result<String> {
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg(format!(
-            "source '{}' 2>/dev/null && echo \"$pkgname\"",
-            pkgbuild_path
-        ))
-        .output()
-        .context("Failed to execute bash to parse PKGBUILD")?;
-
-    if !output.status.success() {
-        anyhow::bail!("Failed to source PKGBUILD at: {}", pkgbuild_path);
-    }
-
-    let stdout =
-        String::from_utf8(output.stdout).context("Failed to parse bash output as UTF-8")?;
-
-    let pkgname = stdout.trim().to_string();
-
-    if pkgname.is_empty() {
-        anyhow::bail!("pkgname is empty in PKGBUILD");
-    }
-
-    Ok(pkgname)
 }
 
 #[cfg(test)]

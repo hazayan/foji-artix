@@ -1,7 +1,25 @@
 use std::fs;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Output};
 use tempfile::TempDir;
+
+fn run_git(repo_path: &Path, args: &[&str]) -> Output {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(repo_path)
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "git {:?} failed\nstdout:\n{}\nstderr:\n{}",
+        args,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    output
+}
 
 /// Helper to create a test git repository
 fn create_test_repo() -> TempDir {
@@ -9,24 +27,12 @@ fn create_test_repo() -> TempDir {
     let path = dir.path();
 
     // Initialize git repo
-    Command::new("git")
-        .args(&["init"])
-        .current_dir(path)
-        .output()
-        .unwrap();
+    run_git(path, &["init"]);
 
     // Configure git
-    Command::new("git")
-        .args(&["config", "user.email", "test@example.com"])
-        .current_dir(path)
-        .output()
-        .unwrap();
-
-    Command::new("git")
-        .args(&["config", "user.name", "Test User"])
-        .current_dir(path)
-        .output()
-        .unwrap();
+    run_git(path, &["config", "user.email", "test@example.com"]);
+    run_git(path, &["config", "user.name", "Test User"]);
+    run_git(path, &["config", "commit.gpgsign", "false"]);
 
     dir
 }
@@ -58,20 +64,12 @@ fn test_list_packages_empty_repo() {
 
     // Create initial commit
     fs::write(repo.path().join("README.md"), "# Test").unwrap();
-    Command::new("git")
-        .args(&["add", "."])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
-    Command::new("git")
-        .args(&["commit", "-m", "Initial commit"])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
+    run_git(repo.path(), &["add", "."]);
+    run_git(repo.path(), &["commit", "-m", "Initial commit"]);
 
     // Build foji (assumes it's built)
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--",
             "list-packages",
@@ -96,20 +94,12 @@ fn test_list_packages_with_package() {
     create_pkgbuild(&pkg_dir, "1.0.0", "1");
 
     // Commit
-    Command::new("git")
-        .args(&["add", "."])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
-    Command::new("git")
-        .args(&["commit", "-m", "Add test package"])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
+    run_git(repo.path(), &["add", "."]);
+    run_git(repo.path(), &["commit", "-m", "Add test package"]);
 
     // List packages
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--",
             "list-packages",
@@ -134,20 +124,12 @@ fn test_detect_changes_first_commit() {
     create_pkgbuild(&pkg_dir, "1.0.0", "1");
 
     // Commit
-    Command::new("git")
-        .args(&["add", "."])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
-    Command::new("git")
-        .args(&["commit", "-m", "First commit"])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
+    run_git(repo.path(), &["add", "."]);
+    run_git(repo.path(), &["commit", "-m", "First commit"]);
 
     // Detect changes (should return all packages on first commit)
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--",
             "detect-changes",
@@ -168,7 +150,7 @@ fn test_package_version() {
     create_pkgbuild(dir.path(), "2.5.1", "3");
 
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--",
             "package-version",
@@ -191,20 +173,12 @@ fn test_detect_changes_json_format() {
     fs::create_dir(&pkg_dir).unwrap();
     create_pkgbuild(&pkg_dir, "1.0.0", "1");
 
-    Command::new("git")
-        .args(&["add", "."])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
-    Command::new("git")
-        .args(&["commit", "-m", "Add pkg1"])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
+    run_git(repo.path(), &["add", "."]);
+    run_git(repo.path(), &["commit", "-m", "Add pkg1"]);
 
     // Test JSON output format
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--",
             "detect-changes",
@@ -234,43 +208,22 @@ fn test_removed_package_not_reported_as_changed() {
     create_pkgbuild(&pkg_dir, "1.0.0", "1");
 
     // Commit with the package present
-    Command::new("git")
-        .args(&["add", "."])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
-    Command::new("git")
-        .args(&["commit", "-m", "Add removable package"])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
+    run_git(repo.path(), &["add", "."]);
+    run_git(repo.path(), &["commit", "-m", "Add removable package"]);
 
     // Record this commit as the base ref
-    let base_output = Command::new("git")
-        .args(&["rev-parse", "HEAD"])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
-    assert!(base_output.status.success());
+    let base_output = run_git(repo.path(), &["rev-parse", "HEAD"]);
     let base_ref = String::from_utf8(base_output.stdout).unwrap();
     let base_ref = base_ref.trim();
 
     // Now remove the package directory and commit the removal
     fs::remove_dir_all(&pkg_dir).unwrap();
-    Command::new("git")
-        .args(&["add", "-A"])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
-    Command::new("git")
-        .args(&["commit", "-m", "Remove package"])
-        .current_dir(repo.path())
-        .output()
-        .unwrap();
+    run_git(repo.path(), &["add", "-A"]);
+    run_git(repo.path(), &["commit", "-m", "Remove package"]);
 
     // list-packages at HEAD should *not* include the removed package
     let list_output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--",
             "list-packages",
@@ -289,7 +242,7 @@ fn test_removed_package_not_reported_as_changed() {
     // detect-changes from the recorded base_ref should *not* report the removed package,
     // documenting the current limitation that deletions are not surfaced as 'changed'
     let detect_output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--",
             "detect-changes",
