@@ -1,0 +1,62 @@
+# Maintainer: artist for Artix Linux
+
+pkgname="booster"
+pkgver="0.13.0"
+pkgrel="1"
+pkgdesc="Fast and secure initramfs generator"
+arch=("x86_64")
+url="https://github.com/hazayan/booster"
+license=("MIT")
+depends=("bash")
+makedepends=("go" "ruby-ronn-ng")
+optdepends=(
+  "busybox: to enable emergency shell at the boot time"
+  "yubikey-personalization: for clevis Yubikey challenge-response support"
+  "libfido2: for enroll with FIDO2"
+)
+backup=("etc/booster.yaml")
+provides=("initramfs")
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/hazayan/${pkgname}/archive/v${pkgver}.tar.gz"
+        "universal-img.patch")
+sha256sums=("f0c94de2f72e6bfd0e8d707a67bc05a922e130e3f570415409aaf23202d427ae"
+            "e258114e698eba376d1270ba34df2cd1717781142c27318b51e2e299c8acd4a3")
+
+prepare() {
+  cd "${pkgname}-${pkgver}"
+  patch -Np1 -i ../universal-img.patch
+}
+
+build() {
+  cd "${pkgname}-${pkgver}"
+
+  cd generator
+  CGO_CPPFLAGS="${CPPFLAGS}" CGO_CFLAGS="${CFLAGS}" CGO_CXXFLAGS="${CXXFLAGS}" CGO_LDFLAGS="${LDFLAGS}" \
+    go build -trimpath \
+      -buildmode=pie \
+      -mod=readonly \
+      -modcacherw \
+      -ldflags "-linkmode external -buildid='' -extldflags \"${LDFLAGS}\""
+
+  cd ../init
+  CGO_ENABLED=0 go build -trimpath -mod=readonly -modcacherw
+
+  cd ..
+  ronn docs/manpage.md
+}
+
+package() {
+  cd "${pkgname}-${pkgver}"
+  mkdir "${pkgdir}/etc/"
+  touch "${pkgdir}/etc/booster.yaml"
+  install -Dp -m755 generator/generator "${pkgdir}/usr/bin/booster"
+  install -Dp -m644 docs/manpage.1 "${pkgdir}/usr/share/man/man1/booster.1"
+  install -Dp -m755 init/init "${pkgdir}/usr/lib/booster/init"
+  install -Dp -m755 packaging/arch/regenerate_images "${pkgdir}/usr/lib/booster/regenerate_images"
+  install -Dp -m755 packaging/arch/regenerate_uki "${pkgdir}/usr/lib/booster/regenerate_uki"
+
+  install -Dp -m644 packaging/arch/90-booster-install.hook "${pkgdir}/usr/share/libalpm/hooks/90-booster-install.hook"
+  install -Dp -m755 packaging/arch/booster-install "${pkgdir}/usr/share/libalpm/scripts/booster-install"
+  install -Dp -m644 packaging/arch/60-booster-remove.hook "${pkgdir}/usr/share/libalpm/hooks/60-booster-remove.hook"
+  install -Dp -m755 packaging/arch/booster-remove "${pkgdir}/usr/share/libalpm/scripts/booster-remove"
+  install -Dp -m755 contrib/completion/bash "${pkgdir}/usr/share/bash-completion/completions/booster"
+}
