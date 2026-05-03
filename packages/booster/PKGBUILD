@@ -1,7 +1,7 @@
 # Maintainer: artist for Artix Linux
 
 pkgname="booster"
-pkgver="0.14.0"
+pkgver="0.15.0"
 pkgrel="1"
 pkgdesc="Fast and secure initramfs generator"
 arch=("x86_64")
@@ -18,7 +18,7 @@ backup=("etc/booster.yaml")
 provides=("initramfs")
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/hazayan/${pkgname}/archive/v${pkgver}.tar.gz"
         "universal-img.patch")
-sha256sums=("06ebff1c65d5ac004724707cccbd2e9fabc28de41d602c17cd6db12b28c554ba"
+sha256sums=("63d3a7f7e74d3460641609d3795cf549b15a432ce28bc94d535e41e3dfda1b00"
             "e258114e698eba376d1270ba34df2cd1717781142c27318b51e2e299c8acd4a3")
 
 prepare() {
